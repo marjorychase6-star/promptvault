@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e8943a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PromptVault">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<title>PromptVault · Prompt 版本管理工具</title>
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface-raised: #202026;
+    --surface-hover: #282830;
+    --border: #2a2a32;
+    --border-light: #35353f;
+    --text: #e4e4ea;
+    --text-dim: #8a8a96;
+    --text-dimmer: #60606e;
+    --accent: #e8943a;
+    --accent-dim: rgba(232,148,58,0.12);
+    --accent-glow: rgba(232,148,58,0.06);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.08);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.08);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.1);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-mono: "SF Mono", "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  }
+
+  [data-theme="light"] {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface-raised: #f0efec;
+    --surface-hover: #e8e7e4;
+    --border: #e0dfdb;
+    --border-light: #d5d4d0;
+    --text: #1a1a1e;
+    --text-dim: #6b6b76;
+    --text-dimmer: #a0a0aa;
+    --accent-dim: rgba(232,148,58,0.08);
+    --accent-glow: rgba(232,148,58,0.04);
+    --green-dim: rgba(74,222,128,0.06);
+    --red-dim: rgba(248,113,113,0.06);
+    --blue-dim: rgba(96,165,250,0.08);
+    --btn-primary-text: #0f0f11;
+  }
+  :root { --btn-primary-text: #0f0f11; }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.3px;
+  }
+  .header-logo span { color: var(--accent); }
+  .header-search {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--font-sans);
+    width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .header-search:focus { border-color: var(--accent); color: var(--text); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .header-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+  }
+  .header-btn:hover { border-color: var(--accent); color: var(--text); background: var(--accent-dim); }
+  .header-btn:active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .header-btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--btn-primary-text);
+    font-weight: 600;
+  }
+  .header-btn--primary:hover { opacity: 0.9; }
+
+  /* ── Layout ── */
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 14px 16px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dimmer);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-list { flex: 1; overflow-y: auto; padding: 6px; }
+
+  .prompt-item {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .prompt-item:hover { background: var(--surface-hover); }
+  .prompt-item--active {
+    background: var(--accent-dim);
+    border-left: 3px solid var(--accent);
+  }
+  .prompt-item--active:hover { background: var(--surface-hover); }
+  .prompt-item__name {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .prompt-item__meta {
+    font-size: 11px;
+    color: var(--text-dimmer);
+    font-family: var(--font-mono);
+  }
+  .prompt-item__tag {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--surface-hover);
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .sidebar-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dimmer);
+  }
+
+  /* ── Main ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 10px; }
+  .toolbar-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .toolbar-title__count {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-left: 6px;
+    font-family: var(--font-mono);
+  }
+  .toolbar-tabs { display: flex; gap: 0; background: var(--bg); border-radius: var(--radius-sm); padding: 2px; }
+  .toolbar-tab {
+    padding: 7px 20px;
+    font-size: 13px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+  }
+  .toolbar-tab--active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .toolbar-tab:hover:not(.toolbar-tab--active) { color: var(--accent); }
+  .toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+    font-weight: 500;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--btn-primary-text);
+    font-weight: 600;
+  }
+  .btn--primary:hover { opacity: 0.85; background: var(--accent); }
+  .btn--ghost { border-color: transparent; }
+  .btn--ghost:hover { background: var(--accent-dim); border-color: transparent; color: var(--accent); }
+  .btn--gear {
+    font-size: 16px;
+    padding: 6px 10px;
+    background: var(--accent-dim);
+    border-color: transparent;
+    color: var(--accent);
+  }
+  .btn--gear:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--btn-primary-text);
+  }
+
+  /* ── Workspace ── */
+  .workspace { flex: 1; display: flex; overflow: hidden; }
+
+  .editor-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+  }
+  .editor-header {
+    padding: 12px 20px 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .editor-title-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    font-family: var(--font-sans);
+  }
+  .editor-title-input::placeholder { color: var(--text-dimmer); }
+  .editor-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+  .editor-body {
+    flex: 1;
+    position: relative;
+  }
+  .editor-textarea {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    border: none;
+    padding: 20px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    resize: none;
+    outline: none;
+    tab-size: 2;
+  }
+  .editor-textarea::placeholder { color: var(--text-dimmer); }
+  .editor-line-nums {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 20px 12px 20px 16px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-dimmer);
+    text-align: right;
+    user-select: none;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  /* ── Version panel ── */
+  .version-panel {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .version-header {
+    padding: 12px 16px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dimmer);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .version-count {
+    font-size: 10px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .version-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .version-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 4px;
+    position: relative;
+  }
+  .version-item::before {
+    content: '';
+    position: absolute;
+    left: 23px;
+    top: 34px;
+    bottom: -8px;
+    width: 1px;
+    background: var(--border);
+  }
+  .version-item:last-child::before { display: none; }
+
+  .version-item:hover { background: var(--surface-hover); }
+  .version-item--active {
+    background: var(--accent-dim);
+  }
+  .version-item--current .version-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+
+  .version-item__set-current {
+    display: none;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dimmer);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: var(--font-sans);
+  }
+  .version-item__set-current:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .version-item:hover .version-item__set-current { display: inline-block; }
+  .version-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--border-light);
+    background: var(--surface);
+    flex-shrink: 0;
+    margin-top: 3px;
+    transition: all 0.2s;
+  }
+  .version-info { flex: 1; min-width: 0; }
+  .version-label {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .version-date {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    font-family: var(--font-mono);
+    margin-top: 1px;
+  }
+  .version-status {
+    font-size: 10px;
+    color: var(--green);
+    margin-top: 2px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── Diff View ── */
+  .diff-view {
+    display: none;
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+    background: var(--bg);
+  }
+  .diff-view--active { display: flex; }
+  .diff-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .diff-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+  }
+  .diff-badge--add { background: var(--green-dim); color: var(--green); }
+  .diff-badge--del { background: var(--red-dim); color: var(--red); }
+  .diff-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .diff-line {
+    display: flex;
+    padding: 0 20px;
+    min-height: 24px;
+    align-items: flex-start;
+  }
+  .diff-line__num {
+    width: 40px;
+    text-align: right;
+    color: var(--text-dimmer);
+    font-size: 11px;
+    padding-right: 12px;
+    flex-shrink: 0;
+    opacity: 0.4;
+    user-select: none;
+  }
+  .diff-line__content { white-space: pre-wrap; word-break: break-word; }
+  .diff-line--add { background: var(--green-dim); }
+  .diff-line--del { background: var(--red-dim); }
+  .diff-line--add .diff-line__num,
+  .diff-line--del .diff-line__num { opacity: 0.8; }
+
+  /* ── Output panel (run mode) ── */
+  .output-panel {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .output-panel--active { display: flex; }
+  .output-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--surface);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .output-header-left { display: flex; align-items: center; gap: 10px; }
+  .output-label { font-size: 12px; font-weight: 500; }
+  .output-header-right { display: flex; align-items: center; gap: 8px; }
+  .output-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── Test input ── */
+  .test-input-area {
+    flex-shrink: 0;
+  }
+  .test-input {
+    width: 100%;
+    min-height: 80px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .test-input:focus { border-color: var(--accent); }
+  .test-input::placeholder { color: var(--text-dimmer); }
+
+  /* ── Version selector ── */
+  .version-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    max-width: 200px;
+  }
+  .version-select:focus { border-color: var(--accent); }
+  .version-select option { background: var(--surface); color: var(--text); }
+
+  .output-msg {
+    background: var(--surface-raised);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    border-left: 2px solid var(--accent);
+  }
+  .output-msg__meta {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    font-family: var(--font-mono);
+    margin-bottom: 6px;
+  }
+  .output-msg--error { border-left-color: var(--red); }
+  .output-msg--info { border-left-color: var(--blue); }
+
+  /* ── Loading ── */
+  .loading-spinner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay--open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    padding: 0;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--surface-hover); color: var(--text); }
+  .modal-body { padding: 20px; }
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  select.form-input { cursor: pointer; appearance: auto; }
+  .form-input--password { padding-right: 40px; }
+  .form-input-wrap {
+    position: relative;
+  }
+  .form-input-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-dimmer);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px;
+  }
+  .form-input-toggle:hover { color: var(--text); }
+  .form-row {
+    display: flex;
+    gap: 12px;
+  }
+  .form-row .form-group { flex: 1; }
+  .form-hint {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    margin-top: 4px;
+  }
+  .form-status {
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    margin-top: 8px;
+    display: none;
+  }
+  .form-status--success { display: block; background: var(--green-dim); color: var(--green); }
+  .form-status--error { display: block; background: var(--red-dim); color: var(--red); }
+
+  /* ── Empty state ── */
+  .editor-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dimmer);
+  }
+  .editor-empty__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+  .editor-empty__text { font-size: 14px; margin-bottom: 6px; }
+  .editor-empty__hint { font-size: 12px; color: var(--text-dimmer); }
+
+  /* ── Animations ── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .diff-line { animation: slideIn 0.2s ease forwards; opacity: 0; }
+  .diff-line:nth-child(1) { animation-delay: 0.02s; }
+  .diff-line:nth-child(2) { animation-delay: 0.04s; }
+  .diff-line:nth-child(3) { animation-delay: 0.06s; }
+  .diff-line:nth-child(4) { animation-delay: 0.08s; }
+  .diff-line:nth-child(5) { animation-delay: 0.10s; }
+
+  /* ── Responsive ── */
+  /* ── Export dropdown menu ── */
+  .export-btn-wrap { position: relative; }
+  .export-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 100;
+    min-width: 220px;
+    overflow: hidden;
+  }
+  .export-menu--open { display: block; }
+  .export-menu__item {
+    padding: 8px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.12s;
+    white-space: nowrap;
+  }
+  .export-menu__item:hover { background: var(--accent-dim); color: var(--accent); }
+  .export-menu__item + .export-menu__item { border-top: 1px solid var(--border); }
+
+  /* ── Sidebar action buttons ── */
+  .prompt-item { position: relative; }
+  .prompt-item__delete,
+  .prompt-item__edit {
+    display: none;
+    position: absolute;
+    background: none;
+    border: none;
+    color: var(--text-dimmer);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 3px;
+    transition: all 0.12s;
+    z-index: 5;
+  }
+  .prompt-item__delete:hover { color: var(--red); background: var(--red-dim); }
+  .prompt-item__edit:hover { color: var(--accent); background: var(--accent-dim); }
+  .prompt-item:hover .prompt-item__delete,
+  .prompt-item:hover .prompt-item__edit { display: block; }
+  .prompt-item__delete { right: 6px; top: 6px; }
+  .prompt-item__edit { right: 6px; top: 30px; transform: rotate(90deg); }
+
+  @media (max-width: 860px) {
+    .sidebar { display: none; }
+    .version-panel { width: 200px; }
+  }
+  @media (max-width: 600px) {
+    .version-panel { display: none; }
+    .header-search { width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ Header ═══ -->
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">Prompt<span>Vault</span></div>
+    <input class="header-search" type="text" placeholder="搜索 prompts..." id="searchInput" oninput="filterPrompts(this.value)" data-i18n-placeholder="searchPlaceholder">
+  </div>
+  <div class="header-right">
+    <div class="export-btn-wrap">
+      <button class="header-btn" onclick="toggleExportMenu()" title="导出数据" data-i18n-title="exportTitle"><span data-i18n="exportBtn">↓ 导出 ▾</span></button>
+      <div class="export-menu" id="exportMenu">
+        <div class="export-menu__item" onclick="exportData()" data-i18n="exportJSON">导出为 JSON（完整备份）</div>
+        <div class="export-menu__item" onclick="exportAsMd()" data-i18n="exportMD">导出为 Markdown（.md）</div>
+      </div>
+    </div>
+    <button class="header-btn" onclick="document.getElementById('importInput').click()" title="导入数据" data-i18n-title="importTitle" data-i18n="importBtn">↑ 导入</button>
+    <input type="file" id="importInput" accept=".json,.md" style="display:none" onchange="importData(event)">
+    <button class="header-btn" id="langToggle" onclick="toggleLang()" title="Switch to English" style="font-size:12px;line-height:1;padding:5px 8px;font-weight:600;">EN</button>
+    <button class="header-btn" id="themeToggle" onclick="toggleTheme()" style="font-size:15px;line-height:1;padding:5px 10px;">&#9680;</button>
+    <button class="header-btn" onclick="handleNew()" id="newPromptBtn" data-i18n="newBtn">+ 新建</button>
+  </div>
+</header>
+
+<!-- ═══ Layout ═══ -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header" data-i18n="sidebarTitle">Prompt 库</div>
+    <div class="sidebar-list" id="promptList">
+      <!-- populated by JS -->
+    </div>
+    <div class="sidebar-footer" id="sidebarFooter">共 <span id="promptCount">0</span> 个 prompt</div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="toolbar-title" id="currentTitle">
+          <span id="activePromptName" data-i18n="noPromptSelected">选择 prompt</span>
+          <span class="toolbar-title__count" id="versionCount"></span>
+        </div>
+        <div class="toolbar-tabs" id="viewTabs">
+          <button class="toolbar-tab toolbar-tab--active" data-view="editor" onclick="switchView('editor')" data-i18n="tabEdit">编辑</button>
+          <button class="toolbar-tab" data-view="diff" onclick="switchView('diff')" data-i18n="tabDiff">对比</button>
+          <button class="toolbar-tab" data-view="output" onclick="switchView('output')" data-i18n="tabTest">测试</button>
+        </div>
+        <button class="btn btn--gear" onclick="openApiSettings()" title="API 设置" data-i18n-title="gearTitle">&#9881;</button>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn--primary" onclick="handleSave()" data-i18n="saveBtn">保存版本</button>
+      </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace">
+
+      <!-- Editor pane -->
+      <div class="editor-pane" id="editorPane">
+        <div class="editor-header">
+          <input class="editor-title-input" id="promptTitleInput" placeholder="版本标签" data-i18n-placeholder="editorTitlePlaceholder">
+          <div class="editor-meta">
+            <span>v<span id="currentVersionNum">1</span></span>
+            <span id="currentDate">-</span>
+            <span id="currentStatus" style="color:var(--green)">● 当前版本</span>
+          </div>
+        </div>
+        <div class="editor-body">
+          <textarea class="editor-textarea" id="promptContent" placeholder="在此输入 prompt 内容..." data-i18n-placeholder="editorContentPlaceholder"></textarea>
+        </div>
+      </div>
+
+      <!-- Diff View -->
+      <div class="diff-view" id="diffView">
+        <div class="diff-header">
+          <span style="font-size:13px;font-weight:500;" data-i18n="diffHeader">选择版本查看对比</span>
+        </div>
+        <div class="diff-body" id="diffBody">
+        </div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="output-panel" id="outputPanel">
+        <div class="output-header">
+          <div class="output-header-left">
+            <span class="output-label" data-i18n="outputLabel">测试运行结果</span>
+            <select class="version-select" id="testVersionSelect" onchange="onTestVersionChange()"></select>
+          </div>
+          <div class="output-header-right">
+            <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono)" id="modelLabel">GPT-4o</span>
+            <button class="btn btn--primary" onclick="handleRun()" data-i18n="outputRun">运行测试</button>
+          </div>
+        </div>
+        <div class="output-body" id="outputBody">
+          <div class="test-input-area">
+            <textarea class="test-input" id="testUserInput" placeholder="输入测试问题...&#10;&#10;例如：订单配送延迟，客户投诉如何回复？" data-i18n-placeholder="testInputPlaceholder"></textarea>
+          </div>
+          <div id="testResults">
+            <div class="output-msg" style="animation:fadeIn 0.3s ease;border-left-color:var(--text-dimmer);">
+              <div class="output-msg__meta" data-i18n="outputHint">提示</div>
+              <div id="outputHintBody">
+                输入测试问题后，点击"运行测试"查看 prompt 效果。
+                <br><br>
+                💡 可在 <strong>API 设置</strong>（工具栏齿轮按钮）中配置 API Key 和 URL 以使用真实模型。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Version panel -->
+      <div class="version-panel">
+        <div class="version-header">
+          <span data-i18n="versionPanelTitle">版本历史</span>
+          <span class="version-count" id="versionPanelCount" data-i18n="versionPanelCount">0 个版本</span>
+        </div>
+        <div class="version-list" id="versionList">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ═══ API Settings Modal ═══ -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="apiSettings">API 设置</span>
+      <button class="modal-close" onclick="closeApiSettings()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" data-i18n="apiUrlLabel">API URL</label>
+        <input class="form-input" id="apiUrl" placeholder="https://api.openai.com/v1/chat/completions" data-i18n-placeholder="apiUrlPlaceholder">
+        <div class="form-hint" data-i18n="apiUrlHint">OpenAI 兼容或 Anthropic Message API 均可</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="apiKeyLabel">API Key</label>
+        <div class="form-input-wrap">
+          <input class="form-input form-input--password" id="apiKey" type="password" placeholder="sk-..." data-i18n-placeholder="apiKeyPlaceholder">
+          <button class="form-input-toggle" onclick="toggleApiKeyVisibility()">👁</button>
+        </div>
+        <div class="form-hint" data-i18n="apiKeyHint">仅保存在本地浏览器，不会上传到任何服务器</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-i18n="apiTypeLabel">API 格式</label>
+          <select class="form-input" id="apiType">
+            <option value="openai" data-i18n="apiTypeOpenAI">OpenAI 兼容</option>
+            <option value="anthropic" data-i18n="apiTypeAnthropic">Anthropic Message API</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="apiModelLabel">Model</label>
+          <input class="form-input" id="apiModel" placeholder="gpt-4o">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="apiTempLabel">Temperature</label>
+          <input class="form-input" id="apiTemperature" type="number" step="0.1" min="0" max="2" placeholder="0.7">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="apiSystemLabel">System Prompt（可选，覆盖 version 内容作为系统提示词）</label>
+        <textarea class="form-input" id="apiSystemPrompt" rows="3" placeholder="留空则使用当前选中的 version 内容作为 system prompt" data-i18n-placeholder="apiSystemPlaceholder" style="resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
+      </div>
+      <div class="form-status" id="apiStatus"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="testApiConnection()" data-i18n="apiTest">测试连接</button>
+      <button class="btn" onclick="clearApiConfig()" style="color:var(--red);border-color:var(--red-dim);" data-i18n="apiClear">清除配置</button>
+      <button class="btn btn--primary" onclick="saveApiSettings()" data-i18n="apiSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ Data ═══
+
+const DEFAULT_PROMPTS = [
+  {
+    id: 1,
+    name: '客户咨询回复助手',
+    tags: ['客服', '生产环境'],
+    updated: '10 分钟前',
+    versions: [
+      { v: 1, date: '2026-05-08 09:00', label: '初版', content: '你是一个专业的客户咨询回复助手。请根据以下规则回复客户的咨询：\n\n## 角色设定\n- 你代表 XX 公司客服团队\n- 专业、友好、高效\n- 每次回复不超过 200 字\n\n## 回复规则\n1. 先确认理解客户问题\n2. 提供解决方案或解释\n3. 询问是否需要进一步帮助\n\n## 变量\n客户名：{{customer_name}}\n问题类型：{{issue_type}}\n历史记录：{{history}}', status: 'current' },
+      { v: 2, date: '2026-05-09 14:20', label: '增加语气控制', content: '你是一个专业的客户咨询回复助手。请根据以下规则回复客户的咨询：\n\n## 角色设定\n- 你代表 XX 公司客服团队\n- 专业、友好、高效\n- 每次回复不超过 200 字\n\n## 语气控制\n- {{tone}} 模式：如果是投诉，先用道歉语气\n- 一般咨询用中性语气\n- 复杂问题用温和语气\n\n## 回复规则\n1. 先确认理解客户问题\n2. 提供解决方案或解释\n3. 询问是否需要进一步帮助\n\n## 变量\n客户名：{{customer_name}}\n问题类型：{{issue_type}}\n历史记录：{{history}}' },
+      { v: 3, date: '2026-05-10 14:30', label: '添加示例', content: '你是一个专业的客户咨询回复助手。请根据以下规则回复客户的咨询：\n\n## 角色设定\n- 你代表 XX 公司客服团队\n- 专业、友好、高效\n- 每次回复不超过 200 字\n\n## 语气控制\n- {{tone}} 模式：如果是投诉，先用道歉语气\n- 一般咨询用中性语气\n- 复杂问题用温和语气\n\n## 回复规则\n1. 先确认理解客户问题\n2. 提供解决方案或解释\n3. 如需跟进，告知预计时间\n4. 询问是否需要进一步帮助\n\n## 示例回复\n> 感谢您的反馈，我理解您遇到的问题是……\n> 这边为您查询到……\n> 请问还有其他可以帮助您的吗？\n\n## 变量\n客户名：{{customer_name}}\n问题类型：{{issue_type}}\n历史记录：{{history}}' }
+    ]
+  },
+  {
+    id: 2,
+    name: '文档摘要生成器',
+    tags: ['效率', '开发中'],
+    updated: '2 天前',
+    versions: [
+      { v: 1, date: '2026-05-08 16:00', label: '初版', content: '请对以下文档生成摘要。\n\n要求：\n- 核心论点\n- 关键数据\n- 结论\n\n文档：{{document}}' }
+    ]
+  },
+  {
+    id: 3,
+    name: '产品需求分析',
+    tags: ['产品'],
+    updated: '3 天前',
+    versions: [
+      { v: 1, date: '2026-05-07 11:20', label: '初版', content: '你是一个资深产品经理。请分析以下产品需求：\n\n## 需求描述\n{{requirement}}\n\n## 分析框架\n1. 用户痛点\n2. 解决方案\n3. 价值评估\n4. 风险与收益\n5. 成功指标' }
+    ]
+  }
+];
+
+let prompts = [];
+let currentPromptId = 1;
+let currentView = 'editor';
+let selectedVersionForDiff = null;
+let previewVersion = null;
+let currentLang = localStorage.getItem('promptvault_lang') || 'zh';
+
+// ═══ i18n ═══
+
+const i18n = {
+  zh: {
+    searchPlaceholder: '搜索 prompts...',
+    exportTitle: '导出数据', exportBtn: '↓ 导出 ▾',
+    exportJSON: '导出为 JSON（完整备份）',
+    exportMD: '导出为 Markdown（.md）',
+    importTitle: '导入数据', importBtn: '↑ 导入',
+    newBtn: '+ 新建',
+    sidebarTitle: 'Prompt 库',
+    sidebarFooter: '共 {n} 个 prompt',
+    tabEdit: '编辑', tabDiff: '对比', tabTest: '测试',
+    gearTitle: 'API 设置',
+    saveBtn: '保存版本',
+    editorTitlePlaceholder: '版本标签',
+    editorContentPlaceholder: '在此输入 prompt 内容...',
+    statusCurrent: '● 当前版本',
+    statusPreview: '◈ 预览 v{v}',
+    versionPanelTitle: '版本历史',
+    versionPanelCount: '{n} 个版本',
+    diffHeader: '选择版本查看对比',
+    diffHeaderCompare: '对比 v{v1} → v{v2}',
+    diffSame: '两个版本内容相同',
+    outputLabel: '测试运行结果',
+    outputRun: '运行测试',
+    testInputPlaceholder: '输入测试问题...\n\n例如：订单配送延迟，客户投诉如何回复？',
+    outputHint: '提示',
+    mockOutput: '这是模拟回复（未配置 API）。实际 API 调用后将展示真实模型输出。',
+    mockInputLabel: '测试问题：',
+    mockHint: '当前使用版本：',
+    mockNoConfig: '尚未配置 API，当前展示模拟结果',
+    loading: '正在调用 API...',
+    noContent: '(无返回内容)',
+    apiError: '调用 API 失败：',
+    apiSettings: 'API 设置',
+    apiUrlLabel: 'API URL',
+    apiUrlPlaceholder: 'https://api.openai.com/v1/chat/completions',
+    apiUrlHint: 'OpenAI 兼容或 Anthropic Message API 均可',
+    apiKeyLabel: 'API Key',
+    apiKeyPlaceholder: 'sk-...',
+    apiKeyHint: '仅保存在本地浏览器，不会上传到任何服务器',
+    apiTypeLabel: 'API 格式',
+    apiTypeOpenAI: 'OpenAI 兼容',
+    apiTypeAnthropic: 'Anthropic Message API',
+    apiModelLabel: 'Model',
+    apiTempLabel: 'Temperature',
+    apiSystemLabel: 'System Prompt（可选，覆盖 version 内容作为系统提示词）',
+    apiSystemPlaceholder: '留空则使用当前选中的 version 内容作为 system prompt',
+    apiTest: '测试连接',
+    apiClear: '清除配置',
+    apiSave: '保存',
+    apiTestConnecting: '⏳ 测试连接中...',
+    apiTestSuccess: '✓ 连接成功！API 响应正常。',
+    apiTestError: '✗ API 返回错误 ({code}): {msg}',
+    apiTestFail: '✗ 连接失败: {msg}',
+    apiSaveSuccess: '✓ 配置已保存',
+    apiClearSuccess: '✓ 配置已清除',
+    apiEmptyUrl: '请填写 API URL',
+    apiEmptyKey: '请填写 API Key',
+    confirmClear: '确定清除 API 配置？',
+    confirmDelete: '确定删除此 prompt？此操作不可撤销。',
+    confirmImport: '即将导入 {n} 个 prompt，将覆盖当前所有数据。确定继续？',
+    confirmImportSingle: '即将导入 prompt "{name}"。确定继续？',
+    confirmImportExists: 'prompt "{name}" 已存在，将作为新版本添加。确定继续？',
+    invalidJSON: '无效的 JSON 格式：需要是 prompt 数组',
+    invalidMD: '无效的 Markdown 格式：需要 frontmatter',
+    invalidMDTitle: '无效的 Markdown 格式：缺少 title',
+    invalidMDEnd: '无效的 Markdown 格式：未找到 frontmatter 结束标记',
+    invalidFormat: '不支持的文件格式，请使用 .json 或 .md 文件',
+    importFail: '导入失败：',
+    versionStatusCurrent: '● 当前版本',
+    versionStatusPreview: '◈ 预览中',
+    versionSetCurrent: '设为当前',
+    versionSetCurrentTitle: '设为当前版本',
+    renamePlaceholder: '输入新名称：',
+    versionSuffix: '版本',
+    errorNoInput: '请输入测试问题',
+    runWithModel: '运行测试',
+    configModel: 'GPT-4o',
+    mockMeta: '模拟回复',
+    errorMeta: '错误',
+    langSwitchTitle: 'Switch to English',
+    langName: '中',
+    noPromptSelected: '选择 prompt',
+    prevPromptEmpty: '选择左侧 prompt 开始编辑',
+    importLabel: '从 .md 导入',
+  },
+  en: {
+    searchPlaceholder: 'Search prompts...',
+    exportTitle: 'Export data', exportBtn: '↓ Export ▾',
+    exportJSON: 'Export as JSON (full backup)',
+    exportMD: 'Export as Markdown (.md)',
+    importTitle: 'Import data', importBtn: '↑ Import',
+    newBtn: '+ New',
+    sidebarTitle: 'Prompt Library',
+    sidebarFooter: '{n} prompts total',
+    tabEdit: 'Edit', tabDiff: 'Diff', tabTest: 'Test',
+    gearTitle: 'API Settings',
+    saveBtn: 'Save Version',
+    editorTitlePlaceholder: 'Version label',
+    editorContentPlaceholder: 'Enter prompt content...',
+    statusCurrent: '● Current',
+    statusPreview: '◈ Preview v{v}',
+    versionPanelTitle: 'Version History',
+    versionPanelCount: '{n} versions',
+    diffHeader: 'Select versions to compare',
+    diffHeaderCompare: 'Compare v{v1} → v{v2}',
+    diffSame: 'Both versions are identical',
+    outputLabel: 'Test Results',
+    outputRun: 'Run Test',
+    testInputPlaceholder: 'Enter a test question...\n\ne.g. Order delayed, how to reply to a customer complaint?',
+    outputHint: 'Hint',
+    mockOutput: 'This is a mock response (API not configured). Real model output will appear once API is set up.',
+    mockInputLabel: 'Test question:',
+    mockHint: 'Current version:',
+    mockNoConfig: 'API not configured, showing mock result',
+    loading: 'Calling API...',
+    noContent: '(no response content)',
+    apiError: 'API call failed: ',
+    apiSettings: 'API Settings',
+    apiUrlLabel: 'API URL',
+    apiUrlPlaceholder: 'https://api.openai.com/v1/chat/completions',
+    apiUrlHint: 'OpenAI compatible or Anthropic Message API',
+    apiKeyLabel: 'API Key',
+    apiKeyPlaceholder: 'sk-...',
+    apiKeyHint: 'Stored locally only, never uploaded to any server',
+    apiTypeLabel: 'API Format',
+    apiTypeOpenAI: 'OpenAI Compatible',
+    apiTypeAnthropic: 'Anthropic Message API',
+    apiModelLabel: 'Model',
+    apiTempLabel: 'Temperature',
+    apiSystemLabel: 'System Prompt (optional, overrides version content)',
+    apiSystemPlaceholder: 'Leave empty to use the selected version content as system prompt',
+    apiTest: 'Test Connection',
+    apiClear: 'Clear Config',
+    apiSave: 'Save',
+    apiTestConnecting: '⏳ Testing connection...',
+    apiTestSuccess: '✓ Connection successful! API responded normally.',
+    apiTestError: '✗ API returned error ({code}): {msg}',
+    apiTestFail: '✗ Connection failed: {msg}',
+    apiSaveSuccess: '✓ Configuration saved',
+    apiClearSuccess: '✓ Configuration cleared',
+    apiEmptyUrl: 'Please enter API URL',
+    apiEmptyKey: 'Please enter API Key',
+    confirmClear: 'Clear API configuration?',
+    confirmDelete: 'Delete this prompt? This cannot be undone.',
+    confirmImport: 'Import {n} prompts? This will override all current data.',
+    confirmImportSingle: 'Import prompt "{name}"?',
+    confirmImportExists: 'Prompt "{name}" already exists. Add as a new version?',
+    invalidJSON: 'Invalid JSON: expected an array of prompts',
+    invalidMD: 'Invalid Markdown: frontmatter required',
+    invalidMDTitle: 'Invalid Markdown: missing title',
+    invalidMDEnd: 'Invalid Markdown: missing frontmatter end marker',
+    invalidFormat: 'Unsupported file format. Please use .json or .md',
+    importFail: 'Import failed: ',
+    versionStatusCurrent: '● Current',
+    versionStatusPreview: '◈ Preview',
+    versionSetCurrent: 'Set Current',
+    versionSetCurrentTitle: 'Set as current version',
+    renamePlaceholder: 'Enter new name:',
+    versionSuffix: 'version',
+    errorNoInput: 'Please enter a test question',
+    runWithModel: 'Run Test',
+    configModel: 'GPT-4o',
+    mockMeta: 'Mock',
+    errorMeta: 'Error',
+    langSwitchTitle: 'Switch to 中文',
+    langName: 'EN',
+    noPromptSelected: 'Select a prompt',
+    prevPromptEmpty: 'Select a prompt from the sidebar to start editing',
+    importLabel: 'Imported from .md',
+  }
+};
+
+function t(key, vars) {
+  const str = i18n[currentLang][key] || key;
+  if (!vars) return str;
+  return str.replace(/\{(\w+)\}/g, (_, k) => vars[k] !== undefined ? vars[k] : '{' + k + '}');
+}
+
+// ═══ API Config ═══
+
+let apiConfig = {
+  url: '',
+  key: '',
+  apiType: 'openai',
+  model: 'gpt-4o',
+  temperature: 0.7,
+  maxTokens: null,
+  systemPrompt: ''
+};
+
+function loadApiConfig() {
+  try {
+    const saved = localStorage.getItem('promptvault_api_config');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      apiConfig = { ...apiConfig, ...parsed };
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function saveApiConfigToStorage() {
+  try {
+    localStorage.setItem('promptvault_api_config', JSON.stringify(apiConfig));
+  } catch(e) { /* ignore */ }
+}
+
+function openApiSettings() {
+  document.getElementById('apiUrl').value = apiConfig.url;
+  document.getElementById('apiKey').value = apiConfig.key;
+  document.getElementById('apiType').value = apiConfig.apiType || 'openai';
+  document.getElementById('apiModel').value = apiConfig.model;
+  document.getElementById('apiTemperature').value = apiConfig.temperature;
+  document.getElementById('apiSystemPrompt').value = apiConfig.systemPrompt;
+  document.getElementById('apiStatus').className = 'form-status';
+  document.getElementById('apiStatus').textContent = '';
+  document.getElementById('apiModal').classList.add('modal-overlay--open');
+}
+
+function closeApiSettings() {
+  document.getElementById('apiModal').classList.remove('modal-overlay--open');
+}
+
+function saveApiSettings() {
+  apiConfig.url = document.getElementById('apiUrl').value.trim();
+  apiConfig.key = document.getElementById('apiKey').value.trim();
+  apiConfig.apiType = document.getElementById('apiType').value || 'openai';
+  apiConfig.model = document.getElementById('apiModel').value.trim() || 'gpt-4o';
+  apiConfig.temperature = parseFloat(document.getElementById('apiTemperature').value) || 0.7;
+  apiConfig.systemPrompt = document.getElementById('apiSystemPrompt').value.trim();
+
+  saveApiConfigToStorage();
+  updateModelLabel();
+
+  const status = document.getElementById('apiStatus');
+  status.className = 'form-status form-status--success';
+  status.textContent = t('apiSaveSuccess');
+  setTimeout(closeApiSettings, 800);
+}
+
+function clearApiConfig() {
+  if (!confirm(t('confirmClear'))) return;
+  apiConfig = { url: '', key: '', apiType: 'openai', model: 'gpt-4o', temperature: 0.7, maxTokens: null, systemPrompt: '' };
+  saveApiConfigToStorage();
+  updateModelLabel();
+  document.getElementById('apiUrl').value = '';
+  document.getElementById('apiKey').value = '';
+  document.getElementById('apiType').value = 'openai';
+  document.getElementById('apiModel').value = 'gpt-4o';
+  document.getElementById('apiTemperature').value = 0.7;
+  document.getElementById('apiSystemPrompt').value = '';
+  const status = document.getElementById('apiStatus');
+  status.className = 'form-status form-status--success';
+  status.textContent = t('apiClearSuccess');
+}
+
+function toggleApiKeyVisibility() {
+  const input = document.getElementById('apiKey');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function testApiConnection() {
+  const status = document.getElementById('apiStatus');
+  const url = document.getElementById('apiUrl').value.trim();
+  const key = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('apiModel').value.trim() || 'gpt-4o';
+  const apiType = document.getElementById('apiType').value || 'openai';
+
+  if (!url) {
+    status.className = 'form-status form-status--error';
+    status.textContent = t('apiEmptyUrl');
+    return;
+  }
+  if (!key) {
+    status.className = 'form-status form-status--error';
+    status.textContent = t('apiEmptyKey');
+    return;
+  }
+
+  status.className = 'form-status form-status--info';
+  status.textContent = t('apiTestConnecting');
+  status.style.display = 'block';
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    let body;
+
+    if (apiType === 'anthropic') {
+      headers['x-api-key'] = key;
+      headers['anthropic-version'] = '2023-06-01';
+      headers['anthropic-dangerous-direct-browser-access'] = '1';
+      body = JSON.stringify({
+        model: model,
+        max_tokens: 5,
+        messages: [{ role: 'user', content: 'ping' }]
+      });
+    } else {
+      headers['Authorization'] = 'Bearer ' + key;
+      body = JSON.stringify({
+        model: model,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 5
+      });
+    }
+
+    const res = await fetch(url, { method: 'POST', headers, body });
+
+    if (res.ok) {
+      status.className = 'form-status form-status--success';
+      status.textContent = t('apiTestSuccess');
+    } else {
+      const err = await res.text();
+      status.className = 'form-status form-status--error';
+      status.textContent = t('apiTestError', { code: res.status, msg: err.slice(0, 200) });
+    }
+  } catch(e) {
+    status.className = 'form-status form-status--error';
+    status.textContent = t('apiTestFail', { msg: e.message });
+  }
+}
+
+function updateModelLabel() {
+  const label = document.getElementById('modelLabel');
+  const typeLabel = apiConfig.apiType === 'anthropic' ? 'Anthropic' : 'OpenAI';
+  label.textContent = (apiConfig.model || 'GPT-4o') + ' \u00b7 ' + typeLabel;
+}
+
+// ═══ localStorage persistence ═══
+
+function loadPrompts() {
+  try {
+    const saved = localStorage.getItem('promptvault_prompts');
+    if (saved) {
+      prompts = JSON.parse(saved);
+      return true;
+    }
+  } catch(e) { /* ignore */ }
+  return false;
+}
+
+function savePrompts() {
+  try {
+    localStorage.setItem('promptvault_prompts', JSON.stringify(prompts));
+  } catch(e) { /* ignore */ }
+}
+
+function initData() {
+  if (!loadPrompts()) {
+    prompts = JSON.parse(JSON.stringify(DEFAULT_PROMPTS));
+    savePrompts();
+  }
+}
+
+// ═══ Import / Export ═══
+
+function exportData() {
+  const data = JSON.stringify(prompts, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `promptvault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAsMd() {
+  const prompt = getCurrentPrompt();
+  if (!prompt) return;
+  const current = prompt.versions.find(v => v.status === 'current') || prompt.versions[prompt.versions.length - 1];
+  const md = `---\ntitle: ${prompt.name}\ntags: ${prompt.tags.join(', ')}\nversion: v${current.v}\ndate: ${current.date}\n---\n\n${current.content}\n`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${prompt.name}-v${current.v}-${new Date().toISOString().slice(0, 10)}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toggleExportMenu() {
+  const menu = document.getElementById('exportMenu');
+  menu.classList.toggle('export-menu--open');
+}
+
+// Close export menu on outside click
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('exportMenu');
+  const btn = document.querySelector('.export-btn-wrap');
+  if (menu && btn && !btn.contains(e.target)) {
+    menu.classList.remove('export-menu--open');
+  }
+});
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result;
+      // Try JSON first
+      if (file.name.endsWith('.json')) {
+        const data = JSON.parse(text);
+        if (!Array.isArray(data) || !data.length) {
+          alert(t('invalidJSON'));
+          return;
+        }
+        if (!confirm(t('confirmImport', { n: data.length }))) return;
+        prompts = data;
+      } else if (file.name.endsWith('.md')) {
+        // Parse frontmatter + content
+        const lines = text.split('\n');
+        if (lines[0].trim() !== '---') {
+          alert(t('invalidMD'));
+          return;
+        }
+        const endIdx = lines.indexOf('---', 1);
+        if (endIdx === -1) {
+          alert(t('invalidMDEnd'));
+          return;
+        }
+        const frontmatter = lines.slice(1, endIdx).join('\n');
+        const content = lines.slice(endIdx + 1).join('\n').trim();
+        const titleMatch = frontmatter.match(/title:\s*(.+)/);
+        const tagsMatch = frontmatter.match(/tags:\s*(.+)/);
+        if (!titleMatch) {
+          alert(t('invalidMDTitle'));
+          return;
+        }
+        const name = titleMatch[1].trim();
+        const tags = tagsMatch ? tagsMatch[1].split(',').map(t => t.trim()) : [currentLang === 'zh' ? '导入' : 'imported'];
+        const existing = prompts.find(p => p.name === name);
+        const maxId = prompts.length > 0 ? Math.max(...prompts.map(p => p.id)) : 0;
+        if (existing) {
+          if (!confirm(t('confirmImportExists', { name }))) return;
+          const newV = existing.versions.length + 1;
+          existing.versions.push({
+            v: newV,
+            date: new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            label: t('importLabel'),
+            content: content,
+            status: 'current'
+          });
+          existing.versions.forEach(v => delete v.status);
+          existing.versions[existing.versions.length - 1].status = 'current';
+          existing.updated = '刚刚';
+        } else {
+          if (!confirm(t('confirmImportSingle', { name }))) return;
+          prompts.push({
+            id: maxId + 1,
+            name: name,
+            tags: tags,
+            updated: '刚刚',
+            versions: [
+              { v: 1, date: new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }), label: t('importLabel'), content: content, status: 'current' }
+            ]
+          });
+        }
+      } else {
+        alert(t('invalidFormat'));
+        return;
+      }
+      savePrompts();
+      currentPromptId = prompts[0].id;
+      renderAll();
+    } catch(err) {
+      alert(t('importFail') + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ═══ Render ═══
+
+function renderAll() {
+  renderPromptList();
+  renderEditor();
+  renderVersions();
+  renderTestVersionSelect();
+  updateModelLabel();
+}
+
+function renderPromptList(filter) {
+  const list = document.getElementById('promptList');
+  const items = filter
+    ? prompts.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
+    : prompts;
+  list.innerHTML = items.map(p => `
+    <div class="prompt-item ${p.id === currentPromptId ? 'prompt-item--active' : ''}" onclick="selectPrompt(${p.id})">
+      <div class="prompt-item__name">${escapeHtml(p.name)}</div>
+      <div class="prompt-item__meta">v${p.versions.length} · ${p.updated}</div>
+      ${p.tags && p.tags.length ? '<div class="prompt-item__tag">' + escapeHtml(p.tags[0]) + '</div>' : ''}
+      <button class="prompt-item__delete" onclick="event.stopPropagation();deletePrompt(${p.id})" title="${t('confirmDelete')}">&times;</button>
+      <button class="prompt-item__edit" onclick="event.stopPropagation();renamePrompt(${p.id})" title="${t('renamePlaceholder')}">&#9998;</button>
+    </div>
+  `).join('');
+  const count = prompts.length;
+  document.getElementById('promptCount').textContent = count;
+}
+
+function renderEditor() {
+  const prompt = getCurrentPrompt();
+  if (!prompt) return;
+  const latest = prompt.versions[prompt.versions.length - 1];
+  const current = prompt.versions.find(v => v.status === 'current') || latest;
+  const preview = previewVersion ? prompt.versions.find(v => v.v === previewVersion) : null;
+  const display = preview || current;
+
+  document.getElementById('activePromptName').textContent = prompt.name;
+  document.getElementById('promptTitleInput').value = display.label;
+  document.getElementById('promptContent').value = display.content;
+  document.getElementById('currentVersionNum').textContent = display.v;
+  document.getElementById('currentDate').textContent = display.date;
+  document.getElementById('currentStatus').textContent = preview ? t('statusPreview', { v: display.v }) : t('statusCurrent');
+  document.getElementById('currentStatus').style.color = preview ? 'var(--blue)' : 'var(--green)';
+  const countSuffix = preview ? ' (' + t('statusPreview', { v: previewVersion }) + ')' : '';
+  document.getElementById('versionCount').textContent = '· v' + current.v + '/' + prompt.versions.length + countSuffix;
+  const vc = document.getElementById('versionPanelCount');
+  vc.textContent = t('versionPanelCount', { n: prompt.versions.length });
+}
+
+function renderVersions() {
+  const prompt = getCurrentPrompt();
+  if (!prompt) return;
+  const list = document.getElementById('versionList');
+  list.innerHTML = prompt.versions.map(v => {
+    const isPreview = previewVersion === v.v && v.status !== 'current';
+    return `
+    <div class="version-item ${v.status === 'current' ? 'version-item--current' : ''} ${isPreview ? 'version-item--active' : ''}" onclick="selectVersion(${v.v})">
+      <div class="version-dot"></div>
+      <div class="version-info">
+        <div class="version-label">v${v.v} · ${escapeHtml(v.label)}</div>
+        <div class="version-date">${v.date}</div>
+        ${v.status === 'current' ? '<div class="version-status">' + t('versionStatusCurrent') + '</div>' : ''}
+        ${isPreview ? '<div class="version-status" style="color:var(--blue)">' + t('versionStatusPreview') + '</div>' : ''}
+      </div>
+      ${v.status !== 'current' ? `<button class="version-item__set-current" onclick="event.stopPropagation();setCurrentVersion(${v.v})" title="${t('versionSetCurrentTitle')}">${t('versionSetCurrent')}</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderTestVersionSelect() {
+  const prompt = getCurrentPrompt();
+  if (!prompt) return;
+  const select = document.getElementById('testVersionSelect');
+  const current = prompt.versions.find(v => v.status === 'current') || prompt.versions[prompt.versions.length - 1];
+  select.innerHTML = prompt.versions.map(v => `
+    <option value="${v.v}" ${v.v === current.v ? 'selected' : ''}>v${v.v} · ${escapeHtml(v.label)}</option>
+  `).join('');
+}
+
+function onTestVersionChange() {
+  // Just update the model label hint when version changes
+  // The actual version content is fetched at run time
+}
+
+function renderDiff(v1, v2) {
+  const container = document.getElementById('diffBody');
+  const lines1 = v1.content.split('\n');
+  const lines2 = v2.content.split('\n');
+
+  const maxLen = Math.max(lines1.length, lines2.length);
+  let html = '';
+  let added = 0, removed = 0;
+
+  for (let i = 0; i < maxLen; i++) {
+    if (i >= lines1.length) {
+      html += `<div class="diff-line diff-line--add"><span class="diff-line__num">${i + 1}</span><span class="diff-line__content">${escapeHtml(lines2[i])}</span></div>`;
+      added++;
+    } else if (i >= lines2.length) {
+      html += `<div class="diff-line diff-line--del"><span class="diff-line__num">${i + 1}</span><span class="diff-line__content">${escapeHtml(lines1[i])}</span></div>`;
+      removed++;
+    } else if (lines1[i] !== lines2[i]) {
+      const sim = similarity(lines1[i], lines2[i]);
+      if (sim > 0.5) {
+        html += `<div class="diff-line diff-line--del"><span class="diff-line__num">${i + 1}</span><span class="diff-line__content">${escapeHtml(lines1[i])}</span></div>`;
+        html += `<div class="diff-line diff-line--add"><span class="diff-line__num">${i + 1}</span><span class="diff-line__content">${escapeHtml(lines2[i])}</span></div>`;
+        removed++; added++;
+      } else {
+        html += `<div class="diff-line diff-line--del"><span class="diff-line__num">${i + 1}</span><span class="diff-line__content">${escapeHtml(lines1[i])}</span></div>`;
+        removed++;
+        html += `<div class="diff-line diff-line--add"><span class="diff-line__num">${i + 1}</span><span class="diff-line__content">${escapeHtml(lines2[i])}</span></div>`;
+        added++;
+      }
+    } else {
+      html += `<div class="diff-line"><span class="diff-line__num">${i + 1}</span><span class="diff-line__content">${escapeHtml(lines1[i])}</span></div>`;
+    }
+  }
+
+  const header = document.querySelector('.diff-header');
+  header.innerHTML = `
+    <span style="font-size:13px;font-weight:500;">${t('diffHeaderCompare', { v1: v1.v, v2: v2.v })}</span>
+    ${added ? `<span class="diff-badge diff-badge--add">+${added} ${currentLang === 'zh' ? '行' : 'lines'}</span>` : ''}
+    ${removed ? `<span class="diff-badge diff-badge--del">-${removed} ${currentLang === 'zh' ? '行' : 'lines'}</span>` : ''}
+    ${!added && !removed ? '<span style="font-size:11px;color:var(--text-dim)">' + t('diffSame') + '</span>' : ''}
+  `;
+
+  container.innerHTML = html;
+}
+
+function renderMockOutput(version) {
+  const container = document.getElementById('testResults');
+  const userInput = document.getElementById('testUserInput').value.trim() || '(' + t('errorNoInput') + ')';
+  const metaLabel = currentLang === 'zh' ? '模拟回复' : t('mockMeta');
+  container.innerHTML = `
+    <div class="output-msg" style="animation:fadeIn 0.3s ease">
+      <div class="output-msg__meta">v${version.v} · ${escapeHtml(version.label)} · ${apiConfig.model || 'GPT-4o'} · ${new Date().toLocaleString('zh-CN')} · ${metaLabel}</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text);">
+        ${t('mockOutput')}<br><br>
+        <strong>${t('mockInputLabel')}</strong>${escapeHtml(userInput)}<br><br>
+        ⚙ ${currentLang === 'zh' ? '点击工具栏齿轮按钮配置 API Key 和 URL 以使用真实模型。' : 'Click the gear icon in toolbar to configure API Key and URL for real model calls.'}
+      </div>
+    </div>
+    <div class="output-msg output-msg--info" style="animation:fadeIn 0.3s 0.1s ease both;">
+      <div class="output-msg__meta">${t('outputHint')}</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text-dim);">
+        ${t('mockHint')}<strong>v${version.v} · ${escapeHtml(version.label)}</strong>
+      </div>
+    </div>
+  `;
+}
+
+function renderResult(version, responseText, isError) {
+  const container = document.getElementById('testResults');
+  // Remove loading spinner
+  const spinner = container.querySelector('.loading-spinner');
+  if (spinner) spinner.remove();
+  const msgClass = isError ? 'output-msg output-msg--error' : 'output-msg';
+  const suffix = isError ? ' · ' + t('errorMeta') : '';
+  const metaText = `v${version.v} · ${escapeHtml(version.label)} · ${apiConfig.model || 'GPT-4o'} · ${new Date().toLocaleString('zh-CN')}${suffix}`;
+
+  const resultHtml = `
+    <div class="${msgClass}" style="animation:fadeIn 0.3s ease">
+      <div class="output-msg__meta">${metaText}</div>
+      <div style="font-size:13px;line-height:1.8;color:${isError ? 'var(--red)' : 'var(--text)'};white-space:pre-wrap;">${escapeHtml(responseText)}</div>
+    </div>
+  `;
+
+  // keep existing results, add new one at top
+  container.innerHTML = resultHtml + container.innerHTML;
+}
+
+function renderLoading() {
+  const container = document.getElementById('testResults');
+  container.innerHTML = `
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <span>${t('loading')}</span>
+    </div>
+  ` + container.innerHTML;
+}
+
+// ═══ Actions ═══
+
+function getCurrentPrompt() {
+  if (currentPromptId == null || !prompts.length) return null;
+  return prompts.find(p => p.id === currentPromptId);
+}
+
+function selectPrompt(id) {
+  currentPromptId = id;
+  renderAll();
+  switchView('editor');
+}
+
+function selectVersion(v) {
+  const prompt = getCurrentPrompt();
+  const version = prompt.versions.find(ver => ver.v === v);
+  if (!version) return;
+
+  const current = prompt.versions.find(ver => ver.status === 'current') || prompt.versions[prompt.versions.length - 1];
+  if (version.v === current.v) {
+    previewVersion = null;
+  } else {
+    previewVersion = v;
+    selectedVersionForDiff = v;
+  }
+  renderAll();
+  // If already in diff view, update comparison
+  if (currentView === 'diff') {
+    const cur = prompt.versions.find(ver => ver.status === 'current') || prompt.versions[prompt.versions.length - 1];
+    const sel = prompt.versions.find(ver => ver.v === selectedVersionForDiff);
+    if (sel && sel.v !== cur.v) {
+      const earlier = sel.v < cur.v ? sel : cur;
+      const later = sel.v < cur.v ? cur : sel;
+      renderDiff(earlier, later);
+    }
+  }
+}
+
+function setCurrentVersion(v) {
+  const prompt = getCurrentPrompt();
+  if (!prompt) return;
+  const version = prompt.versions.find(ver => ver.v === v);
+  if (!version) return;
+  prompt.versions.forEach(ver => delete ver.status);
+  version.status = 'current';
+  prompt.updated = '刚刚';
+  previewVersion = null;
+  savePrompts();
+  renderAll();
+  switchView('editor');
+}
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.toolbar-tab').forEach(tab => {
+    tab.classList.toggle('toolbar-tab--active', tab.dataset.view === view);
+  });
+  document.getElementById('editorPane').style.display = view === 'editor' ? 'flex' : 'none';
+  document.getElementById('diffView').classList.toggle('diff-view--active', view === 'diff');
+  document.getElementById('outputPanel').classList.toggle('output-panel--active', view === 'output');
+
+  if (view === 'diff') {
+    const prompt = getCurrentPrompt();
+    if (prompt && prompt.versions.length >= 2) {
+      const current = prompt.versions.find(v => v.status === 'current') || prompt.versions[prompt.versions.length - 1];
+      const sel = selectedVersionForDiff
+        ? prompt.versions.find(v => v.v === selectedVersionForDiff)
+        : null;
+      if (sel && sel.v !== current.v) {
+        const earlier = sel.v < current.v ? sel : current;
+        const later = sel.v < current.v ? current : sel;
+        renderDiff(earlier, later);
+      } else {
+        renderDiff(prompt.versions[prompt.versions.length - 2], prompt.versions[prompt.versions.length - 1]);
+      }
+    }
+  }
+  if (view === 'output') {
+    renderTestVersionSelect();
+  }
+}
+
+function handleSave() {
+  const prompt = getCurrentPrompt();
+  const content = document.getElementById('promptContent').value;
+  const label = document.getElementById('promptTitleInput').value.trim() || (currentLang === 'zh' ? '新版本' : 'New version');
+  const current = prompt.versions.find(v => v.status === 'current') || prompt.versions[prompt.versions.length - 1];
+
+  // Content unchanged → just update label in-place, no new version
+  if (content === current.content) {
+    current.label = label;
+    current.date = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    current.status = 'current';
+  } else if (prompt.versions.length === 1 && !prompt.versions[0].content.trim()) {
+    prompt.versions[0].content = content;
+    prompt.versions[0].label = label;
+    prompt.versions[0].date = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    prompt.versions[0].status = 'current';
+  } else {
+    prompt.versions.forEach(v => delete v.status);
+    prompt.versions.push({
+      v: prompt.versions.length + 1,
+      date: new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+      label: label,
+      content: content,
+      status: 'current'
+    });
+  }
+  prompt.updated = '刚刚';
+  previewVersion = null;
+  savePrompts();
+  renderAll();
+  switchView('editor');
+}
+
+async function handleRun() {
+  const prompt = getCurrentPrompt();
+  if (!prompt) return;
+
+  const select = document.getElementById('testVersionSelect');
+  const selectedV = parseInt(select.value);
+  const version = prompt.versions.find(v => v.v === selectedV);
+  if (!version) return;
+
+  const userInput = document.getElementById('testUserInput').value.trim();
+  if (!userInput) {
+    document.getElementById('testUserInput').focus();
+    document.getElementById('testUserInput').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('testUserInput').style.borderColor = '', 2000);
+    return;
+  }
+
+  // Check if API is configured
+  if (!apiConfig.url || !apiConfig.key) {
+    renderMockOutput(version);
+    return;
+  }
+
+  // Real API call
+  renderLoading();
+  try {
+    const response = await callLLM(version.content, userInput);
+    renderResult(version, response, false);
+  } catch(e) {
+    renderResult(version, t('apiError') + e.message, true);
+  }
+}
+
+async function callLLM(systemPrompt, userMessage) {
+  if (apiConfig.apiType === 'anthropic') {
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiConfig.key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': '1'
+    };
+    const body = {
+      model: apiConfig.model,
+      max_tokens: apiConfig.maxTokens || 1024,
+      messages: [{ role: 'user', content: userMessage }]
+    };
+    if (apiConfig.systemPrompt.trim()) {
+      body.system = apiConfig.systemPrompt;
+    } else if (systemPrompt.trim()) {
+      body.system = systemPrompt;
+    }
+    if (apiConfig.temperature !== 0.7) body.temperature = apiConfig.temperature;
+
+    const res = await fetch(apiConfig.url, { method: 'POST', headers, body: JSON.stringify(body) });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      let msg = 'HTTP ' + res.status;
+      try {
+        const errJson = JSON.parse(errText);
+        msg = errJson.error?.message || errJson.error?.type || msg;
+      } catch(e) {}
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    return data.content?.[0]?.text || t('noContent');
+  }
+
+  // OpenAI compatible
+  const messages = [];
+  if (apiConfig.systemPrompt.trim()) {
+    messages.push({ role: 'system', content: apiConfig.systemPrompt });
+  } else if (systemPrompt.trim()) {
+    messages.push({ role: 'system', content: systemPrompt });
+  }
+  messages.push({ role: 'user', content: userMessage });
+
+  const res = await fetch(apiConfig.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiConfig.key
+    },
+    body: JSON.stringify(Object.assign(
+      { model: apiConfig.model, messages, temperature: apiConfig.temperature },
+      apiConfig.maxTokens !== null ? { max_tokens: apiConfig.maxTokens } : {}
+    ))
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    let msg = 'HTTP ' + res.status;
+    try {
+      const errJson = JSON.parse(errText);
+      msg = errJson.error?.message || msg;
+    } catch(e) {}
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || t('noContent');
+}
+
+
+function handleNew() {
+  const id = prompts.length > 0 ? Math.max(...prompts.map(p => p.id)) + 1 : 1;
+  const defaultName = currentLang === 'zh' ? '未命名 prompt' : 'Untitled Prompt';
+  const defaultTag = currentLang === 'zh' ? '新建' : 'new';
+  const defaultLabel = currentLang === 'zh' ? '初版' : 'v1';
+  prompts.push({
+    id,
+    name: defaultName,
+    tags: [defaultTag],
+    updated: '刚刚',
+    versions: [
+      { v: 1, date: new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }), label: defaultLabel, content: '', status: 'current' }
+    ]
+  });
+  currentPromptId = id;
+  savePrompts();
+  renderAll();
+  document.getElementById('promptTitleInput').focus();
+}
+
+function renamePrompt(id) {
+  const p = prompts.find(p => p.id === id);
+  if (!p) return;
+  const newName = window.prompt(t('renamePlaceholder'), p.name);
+  if (newName && newName.trim()) {
+    p.name = newName.trim();
+    p.updated = '刚刚';
+    savePrompts();
+    renderAll();
+  }
+}
+
+function deletePrompt(id) {
+  if (!confirm(t('confirmDelete'))) return;
+  prompts = prompts.filter(p => p.id !== id);
+  if (prompts.length === 0) {
+    currentPromptId = null;
+  } else {
+    if (currentPromptId === id) {
+      currentPromptId = prompts[0].id;
+    }
+  }
+  savePrompts();
+  renderAll();
+}
+
+function filterPrompts(query) {
+  renderPromptList(query);
+}
+
+// ═══ Theme toggle ═══
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  if (isLight) {
+    html.removeAttribute('data-theme');
+    document.getElementById('themeToggle').innerHTML = '&#9681;';
+  } else {
+    html.setAttribute('data-theme', 'light');
+    document.getElementById('themeToggle').innerHTML = '&#9680;';
+  }
+}
+
+// ═══ i18n: translate static UI ═══
+
+function translateUI() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  // Update sidebar footer (preserve the count span)
+  const footer = document.getElementById('sidebarFooter');
+  if (footer) {
+    const n = prompts.length;
+    footer.innerHTML = currentLang === 'zh'
+      ? '共 <span id="promptCount">' + n + '</span> 个 prompt'
+      : '<span id="promptCount">' + n + '</span> prompts total';
+  }
+  // Update version panel count (generic handler strips {n}, fix it here)
+  const vc = document.getElementById('versionPanelCount');
+  if (vc) {
+    const prompt = getCurrentPrompt();
+    vc.textContent = t('versionPanelCount', { n: prompt ? prompt.versions.length : 0 });
+  }
+  // Update lang toggle button
+  const langBtn = document.getElementById('langToggle');
+  if (langBtn) {
+    langBtn.textContent = currentLang === 'zh' ? 'EN' : '中';
+    langBtn.title = currentLang === 'zh' ? 'Switch to English' : '切换到中文';
+  }
+  // Update select option texts
+  document.querySelectorAll('#apiType option').forEach(opt => {
+    const key = opt.dataset.i18n;
+    if (key) opt.textContent = t(key);
+  });
+  // Handle output hint body (has HTML content)
+  const hintBody = document.getElementById('outputHintBody');
+  if (hintBody) {
+    const lang = currentLang;
+    hintBody.innerHTML = lang === 'zh'
+      ? '输入测试问题后，点击"运行测试"查看 prompt 效果。<br><br>💡 可在 <strong>API 设置</strong>（工具栏齿轮按钮）中配置 API Key 和 URL 以使用真实模型。'
+      : 'Enter a test question and click <strong>Run Test</strong> to see prompt results.<br><br>💡 Configure <strong>API Key</strong> and <strong>URL</strong> in API Settings (gear icon in toolbar) to use real models.';
+  }
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('promptvault_lang', currentLang);
+  translateUI();
+  renderAll();
+}
+
+// ═══ Utils ═══
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function similarity(s1, s2) {
+  if (s1 === s2) return 1;
+  const len = Math.max(s1.length, s2.length);
+  if (len === 0) return 1;
+  let same = 0;
+  for (let i = 0; i < Math.min(s1.length, s2.length); i++) {
+    if (s1[i] === s2[i]) same++;
+  }
+  return same / len;
+}
+
+// ═══ Keyboard shortcut ═══
+document.addEventListener('keydown', function(e) {
+  // Escape closes modal
+  if (e.key === 'Escape') {
+    if (document.getElementById('apiModal').classList.contains('modal-overlay--open')) {
+      closeApiSettings();
+    }
+  }
+  // Ctrl+Enter runs test when in output view
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && currentView === 'output') {
+    e.preventDefault();
+    handleRun();
+  }
+});
+
+// ═══ Init ═══
+loadApiConfig();
+initData();
+translateUI();
+// Ensure currentPromptId exists
+if (!prompts.find(p => p.id === currentPromptId)) {
+  currentPromptId = prompts[0]?.id;
+}
+renderAll();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(err) {
+    console.warn('ServiceWorker 注册失败:', err);
+  });
+}
+</script>
+
+</body>
+</html>

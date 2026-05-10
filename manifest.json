@@ -1,0 +1,19 @@
+{
+  "name": "PromptVault — Prompt 版本管理工具",
+  "short_name": "PromptVault",
+  "description": "管理、版本控制、对比、测试 Prompt 的轻量工具",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f0f11",
+  "theme_color": "#e8943a",
+  "orientation": "landscape",
+  "categories": ["productivity", "developer-tools"],
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
