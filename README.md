@@ -1,6 +1,16 @@
+<div align="right">
+  <a href="#-中文">🇨🇳 中文</a> | <a href="#-english">🇬🇧 English</a>
+</div>
+
+---
+
 # PromptVault
 
-**Prompt 版本管理工具** — 轻量、离线可用、双模操作（浏览器 UI + AI Agent 对话管理）。
+**Prompt 版本管理工具 / Prompt Version Management Tool**
+
+轻量、离线可用、双模操作（浏览器 UI + AI Agent 对话管理）。
+
+Lightweight, offline-capable, dual-mode operation (Browser UI + AI Agent conversation).
 
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-deployed-success)
 ![PWA](https://img.shields.io/badge/PWA-ready-orange)
@@ -8,7 +18,9 @@
 
 ---
 
-## 功能
+## 🇨🇳 中文
+
+### 功能
 
 | 功能 | 说明 |
 |------|------|
@@ -22,24 +34,52 @@
 | 📦 数据导入/导出 | JSON 完整备份 / Markdown 导出 |
 | 📱 PWA 支持 | 可安装为独立应用，离线可用 |
 
-## 快速使用
+### 快速使用
 
-### 浏览器模式
+**浏览器模式** — 直接访问：[https://marjorychase6-star.github.io/promptvault/](https://marjorychase6-star.github.io/promptvault/)
 
-直接访问：**[https://marjorychase6-star.github.io/promptvault/](https://marjorychase6-star.github.io/promptvault/)**
+**Agent 模式（Coding Agent）** — 将 `skills/SKILL.md` 添加为 Agent 的 skill，即可通过对话管理所有 prompt 操作。
 
-### Agent 模式（Coding Agent）
-
-将 `skills/SKILL.md` 添加为 Agent 的 skill，即可通过对话管理所有 prompt 操作，支持创建、版本控制、diff 对比、导出等功能。
-
-## 技术栈
+### 技术栈
 
 - 纯 HTML/CSS/JavaScript（单文件，无框架依赖）
-- PWA (Service Worker + Manifest)
-- 本地存储 (localStorage)
+- PWA（Service Worker + Manifest）
+- 本地存储（localStorage）
 - i18n 中英文国际化
-- 兼容 PWA 安装
 
-## 许可
+---
+
+## 🇬🇧 English
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| 📋 Prompt Library | Create, edit, search, delete prompts |
+| 🔄 Version Control | Multi-version management, auto-increment, preview history |
+| 📊 Diff Comparison | Line-level diff with added/removed highlighting |
+| 🧪 Real-time Testing | Select version + enter test question, call real API |
+| ⚙️ API Config | OpenAI compatible (DeepSeek, Qwen, MiniMax, etc.) |
+| ↔️ Language Switch | One-click Chinese/English toggle |
+| 🌗 Dark/Light Theme | Dual theme support |
+| 📦 Import/Export | JSON full backup / Markdown export |
+| 📱 PWA Support | Installable as standalone app, offline-ready |
+
+### Quick Start
+
+**Browser Mode** — Visit: [https://marjorychase6-star.github.io/promptvault/](https://marjorychase6-star.github.io/promptvault/)
+
+**Agent Mode (Coding Agent)** — Add `skills/SKILL.md` as your agent's skill to manage all prompt operations via conversation.
+
+### Tech Stack
+
+- Pure HTML/CSS/JavaScript (single file, no framework)
+- PWA (Service Worker + Manifest)
+- localStorage persistence
+- i18n Chinese/English
+
+---
+
+## 许可 / License
 
 MIT
