@@ -324,6 +324,70 @@
     tab-size: 2;
   }
   .editor-textarea::placeholder { color: var(--text-dimmer); }
+  .editor-ai-assist {
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .ai-assist-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-assist-input {
+    flex: 1;
+    height: 34px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    font-family: var(--font-sans);
+    transition: border-color 0.15s;
+  }
+  .ai-assist-input:focus { border-color: var(--accent); }
+  .ai-assist-input::placeholder { color: var(--text-dimmer); }
+  .ai-assist-result {
+    margin-top: 10px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+  }
+  .ai-assist-result__content {
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    font-family: var(--font-mono);
+    color: var(--text);
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .ai-assist-result__actions {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-raised);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  }
+  .ai-assist-result__actions .btn {
+    padding: 5px 14px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .ai-assist-result__actions .btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
   .editor-line-nums {
     position: absolute;
     left: 0;
@@ -890,6 +954,20 @@
         <div class="editor-body">
           <textarea class="editor-textarea" id="promptContent" placeholder="在此输入 prompt 内容..." data-i18n-placeholder="editorContentPlaceholder"></textarea>
         </div>
+        <!-- AI Assist -->
+        <div class="editor-ai-assist">
+          <div class="ai-assist-bar">
+            <input class="ai-assist-input" id="aiDirection" placeholder="优化方向，如：让它更简洁、增加示例、改为正式语气..." data-i18n-placeholder="aiDirectionPlaceholder">
+            <button class="btn btn--primary" onclick="handleAiAssist()" data-i18n="aiAssistBtn">AI 辅助修改</button>
+          </div>
+          <div class="ai-assist-result" id="aiAssistResult" style="display:none">
+            <div class="ai-assist-result__content" id="aiAssistContent"></div>
+            <div class="ai-assist-result__actions">
+              <button class="btn" onclick="applyAiResult()" data-i18n="aiApplyBtn">替换内容</button>
+              <button class="btn" onclick="saveAiResult()" data-i18n="aiSaveBtn">另存为新版本</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Diff View -->
@@ -1126,6 +1204,12 @@ const i18n = {
     noPromptSelected: '选择 prompt',
     prevPromptEmpty: '选择左侧 prompt 开始编辑',
     importLabel: '从 .md 导入',
+    aiDirectionPlaceholder: '优化方向，如：让它更简洁、增加示例、改为正式语气...',
+    aiAssistBtn: 'AI 辅助修改',
+    aiApplyBtn: '替换内容',
+    aiSaveBtn: '另存为新版本',
+    aiAssistPrompt: '你是一个修改提示词的专家。你的任务是帮助用户根据其具体需求改进他们的提示词。\n\n## 原则\n- 保留原始 prompt 的核心意图和功能\n- 优化结构、清晰度、语气一致性和具体性\n- 确保角色设定明确、约束条件清晰\n- 补全缺失的关键要素（输出格式、边界情况、示例、变量等）\n- 优先满足用户提出的具体优化方向\n- 适当使用 {{variable}} 语法标记模板变量\n\n## 输出格式\n只输出优化后的 prompt 内容，不要解释、不要分析、不要额外说明。',
+    aiNoAPI: 'AI 辅助修改需要先配置 API（点击工具栏齿轮按钮设置）',
   },
   en: {
     searchPlaceholder: 'Search prompts...',
@@ -1211,6 +1295,12 @@ const i18n = {
     noPromptSelected: 'Select a prompt',
     prevPromptEmpty: 'Select a prompt from the sidebar to start editing',
     importLabel: 'Imported from .md',
+    aiDirectionPlaceholder: 'Direction: make it more concise, add examples, formal tone...',
+    aiAssistBtn: 'AI Assist',
+    aiApplyBtn: 'Replace Content',
+    aiSaveBtn: 'Save as New Version',
+    aiAssistPrompt: 'You are an expert prompt engineer. Your task is to help users improve their prompts based on their specific requirements.\n\n## Guidelines\n- Preserve the core intent and functionality of the original prompt\n- Improve structure, clarity, tone consistency, and specificity\n- Ensure role definitions are clear and constraints are explicit\n- Fill in missing elements like output format, edge cases, examples, and variables\n- Prioritize the user\'s stated improvement direction\n- Use {{variable}} syntax for template variables where appropriate\n\n## Output Format\nOutput ONLY the improved prompt content with no explanations, analysis, or additional notes.',
+    aiNoAPI: 'Configure API first (click the gear icon in toolbar) to use AI Assist',
   }
 };
 
@@ -1703,6 +1793,8 @@ function getCurrentPrompt() {
 
 function selectPrompt(id) {
   currentPromptId = id;
+  document.getElementById('aiAssistResult').style.display = 'none';
+  document.getElementById('aiDirection').value = '';
   renderAll();
   switchView('editor');
 }
@@ -1840,6 +1932,64 @@ async function handleRun() {
   } catch(e) {
     renderResult(version, t('apiError') + e.message, true);
   }
+}
+
+// ═══ AI Assist ═══
+
+const AI_ASSIST_PROMPT = t('aiAssistPrompt');
+
+async function handleAiAssist() {
+  const prompt = getCurrentPrompt();
+  if (!prompt) return;
+
+  if (!apiConfig.url || !apiConfig.key) {
+    const resultDiv = document.getElementById('aiAssistResult');
+    const contentDiv = document.getElementById('aiAssistContent');
+    resultDiv.style.display = 'block';
+    contentDiv.textContent = t('aiNoAPI');
+    return;
+  }
+
+  const direction = document.getElementById('aiDirection').value.trim();
+  if (!direction) {
+    document.getElementById('aiDirection').focus();
+    document.getElementById('aiDirection').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('aiDirection').style.borderColor = '', 2000);
+    return;
+  }
+
+  const current = prompt.versions.find(v => v.status === 'current') || prompt.versions[prompt.versions.length - 1];
+  const content = current.content;
+
+  const resultDiv = document.getElementById('aiAssistResult');
+  const contentDiv = document.getElementById('aiAssistContent');
+  resultDiv.style.display = 'block';
+  contentDiv.textContent = t('loading');
+
+  const userMessage = '## Original Prompt\n\n' + content + '\n\n## Improvement Request\n\n' + direction;
+
+  try {
+    const response = await callLLM(AI_ASSIST_PROMPT, userMessage);
+    contentDiv.textContent = response;
+    contentDiv.dataset.aiResult = response;
+  } catch(err) {
+    contentDiv.textContent = t('apiError') + err.message;
+  }
+}
+
+function applyAiResult() {
+  const content = document.getElementById('aiAssistContent').dataset.aiResult;
+  if (!content) return;
+  document.getElementById('promptContent').value = content;
+  document.getElementById('aiAssistResult').style.display = 'none';
+}
+
+function saveAiResult() {
+  const content = document.getElementById('aiAssistContent').dataset.aiResult;
+  if (!content) return;
+  document.getElementById('promptContent').value = content;
+  document.getElementById('aiAssistResult').style.display = 'none';
+  handleSave();
 }
 
 async function callLLM(systemPrompt, userMessage) {
