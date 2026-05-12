@@ -934,6 +934,7 @@
         <button class="btn btn--gear" onclick="openApiSettings()" title="API 设置" data-i18n-title="gearTitle">&#9881;</button>
       </div>
       <div class="toolbar-right">
+        <button class="btn btn--copy" onclick="copyPromptContent()" title="复制当前内容" id="copyBtn" data-i18n-title="copyTitle" style="font-size:13px;padding:5px 12px;">&#128203;</button>
         <button class="btn btn--primary" onclick="handleSave()" data-i18n="saveBtn">保存版本</button>
       </div>
     </div>
@@ -1062,8 +1063,8 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label" data-i18n="apiSystemLabel">System Prompt（可选，覆盖 version 内容作为系统提示词）</label>
-        <textarea class="form-input" id="apiSystemPrompt" rows="3" placeholder="留空则使用当前选中的 version 内容作为 system prompt" data-i18n-placeholder="apiSystemPlaceholder" style="resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
+        <label class="form-label" data-i18n="apiSystemLabel">System Prompt（用于运行测试，覆盖 version 内容）</label>
+        <textarea class="form-input" id="apiSystemPrompt" rows="3" placeholder="留空则使用当前选中的 version 内容作为 system prompt（AI 辅助修改使用内置提示词）" data-i18n-placeholder="apiSystemPlaceholder" style="resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
       </div>
       <div class="form-status" id="apiStatus"></div>
     </div>
@@ -1164,8 +1165,8 @@ const i18n = {
     apiTypeAnthropic: 'Anthropic Message API',
     apiModelLabel: 'Model',
     apiTempLabel: 'Temperature',
-    apiSystemLabel: 'System Prompt（可选，覆盖 version 内容作为系统提示词）',
-    apiSystemPlaceholder: '留空则使用当前选中的 version 内容作为 system prompt',
+    apiSystemLabel: 'System Prompt（用于运行测试，覆盖 version 内容）',
+    apiSystemPlaceholder: '留空则使用当前选中的 version 内容作为 system prompt（AI 辅助修改使用内置提示词）',
     apiTest: '测试连接',
     apiClear: '清除配置',
     apiSave: '保存',
@@ -1210,6 +1211,7 @@ const i18n = {
     aiSaveBtn: '另存为新版本',
     aiAssistPrompt: '你是一个修改提示词的专家。你的任务是帮助用户根据其具体需求改进他们的提示词。\n\n## 原则\n- 保留原始 prompt 的核心意图和功能\n- 优化结构、清晰度、语气一致性和具体性\n- 确保角色设定明确、约束条件清晰\n- 补全缺失的关键要素（输出格式、边界情况、示例、变量等）\n- 优先满足用户提出的具体优化方向\n- 适当使用 {{variable}} 语法标记模板变量\n\n## 输出格式\n只输出优化后的 prompt 内容，不要解释、不要分析、不要额外说明。',
     aiNoAPI: 'AI 辅助修改需要先配置 API（点击工具栏齿轮按钮设置）',
+    copyTitle: '复制当前 prompt 内容',
   },
   en: {
     searchPlaceholder: 'Search prompts...',
@@ -1255,8 +1257,8 @@ const i18n = {
     apiTypeAnthropic: 'Anthropic Message API',
     apiModelLabel: 'Model',
     apiTempLabel: 'Temperature',
-    apiSystemLabel: 'System Prompt (optional, overrides version content)',
-    apiSystemPlaceholder: 'Leave empty to use the selected version content as system prompt',
+    apiSystemLabel: 'System Prompt (for Run Test, overrides version content)',
+    apiSystemPlaceholder: 'Leave empty to use the selected version content (AI Assist uses its built-in prompt)',
     apiTest: 'Test Connection',
     apiClear: 'Clear Config',
     apiSave: 'Save',
@@ -1301,6 +1303,7 @@ const i18n = {
     aiSaveBtn: 'Save as New Version',
     aiAssistPrompt: 'You are an expert prompt engineer. Your task is to help users improve their prompts based on their specific requirements.\n\n## Guidelines\n- Preserve the core intent and functionality of the original prompt\n- Improve structure, clarity, tone consistency, and specificity\n- Ensure role definitions are clear and constraints are explicit\n- Fill in missing elements like output format, edge cases, examples, and variables\n- Prioritize the user\'s stated improvement direction\n- Use {{variable}} syntax for template variables where appropriate\n\n## Output Format\nOutput ONLY the improved prompt content with no explanations, analysis, or additional notes.',
     aiNoAPI: 'Configure API first (click the gear icon in toolbar) to use AI Assist',
+    copyTitle: 'Copy current prompt content',
   }
 };
 
@@ -1936,6 +1939,20 @@ async function handleRun() {
 
 // ═══ AI Assist ═══
 
+function copyPromptContent() {
+  const textarea = document.getElementById('promptContent');
+  const btn = document.getElementById('copyBtn');
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    btn.textContent = '✓';
+    setTimeout(() => { btn.innerHTML = '&#128203;'; }, 1500);
+  }).catch(() => {
+    textarea.select();
+    document.execCommand('copy');
+    btn.textContent = '✓';
+    setTimeout(() => { btn.innerHTML = '&#128203;'; }, 1500);
+  });
+}
+
 const AI_ASSIST_PROMPT = t('aiAssistPrompt');
 
 async function handleAiAssist() {
@@ -1969,7 +1986,7 @@ async function handleAiAssist() {
   const userMessage = '## Original Prompt\n\n' + content + '\n\n## Improvement Request\n\n' + direction;
 
   try {
-    const response = await callLLM(AI_ASSIST_PROMPT, userMessage);
+    const response = await callLLM(AI_ASSIST_PROMPT, userMessage, true);
     contentDiv.textContent = response;
     contentDiv.dataset.aiResult = response;
   } catch(err) {
@@ -1992,7 +2009,7 @@ function saveAiResult() {
   handleSave();
 }
 
-async function callLLM(systemPrompt, userMessage) {
+async function callLLM(systemPrompt, userMessage, ignoreApiSystemPrompt) {
   if (apiConfig.apiType === 'anthropic') {
     const headers = {
       'Content-Type': 'application/json',
@@ -2005,7 +2022,7 @@ async function callLLM(systemPrompt, userMessage) {
       max_tokens: apiConfig.maxTokens || 1024,
       messages: [{ role: 'user', content: userMessage }]
     };
-    if (apiConfig.systemPrompt.trim()) {
+    if (!ignoreApiSystemPrompt && apiConfig.systemPrompt.trim()) {
       body.system = apiConfig.systemPrompt;
     } else if (systemPrompt.trim()) {
       body.system = systemPrompt;
@@ -2030,7 +2047,7 @@ async function callLLM(systemPrompt, userMessage) {
 
   // OpenAI compatible
   const messages = [];
-  if (apiConfig.systemPrompt.trim()) {
+  if (!ignoreApiSystemPrompt && apiConfig.systemPrompt.trim()) {
     messages.push({ role: 'system', content: apiConfig.systemPrompt });
   } else if (systemPrompt.trim()) {
     messages.push({ role: 'system', content: systemPrompt });
