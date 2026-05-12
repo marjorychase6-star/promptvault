@@ -1,8 +1,8 @@
 ---
 name: promptvault
 description: |
-  Prompt version management tool — dual-mode: browser UI / AI Agent conversational management.
-  Auto-trigger when user mentions: manage prompts, version control, diff comparison, test prompt, write prompt, optimize prompt, view version history, save new version, API test config.
+  Prompt version management tool v1.1 — dual-mode: browser UI / AI Agent conversational management.
+  Auto-trigger when user mentions: manage prompts, version control, diff comparison, test prompt, write prompt, optimize prompt, view version history, save new version, API test config, AI assist, test history.
 ---
 
 # Role
@@ -201,12 +201,40 @@ This JSON can be directly imported into the browser UI via "↑ Import" → sele
 | "How to set up DeepSeek?" | URL: `https://api.deepseek.com/v1/chat/completions`, Format: OpenAI compatible |
 | "How to set up MiniMax?" | URL: `https://api.minimax.chat/v1/chat/completions`, Format: OpenAI compatible. Note: CORS may require a proxy. |
 | "How to test my prompt with real API?" | After configuring API in browser, go to the "Test" tab, enter a question, click "Run Test" |
+| "How do I test with a specific version?" | In the "Test" tab, use the version dropdown next to "Run Test" to select which version to use |
+| "The API URL returns CORS error" | Some APIs (e.g. MiniMax) block browser requests. Try a different provider or set up a proxy |
+
+## 9. AI Assist (Browser Feature)
+
+AI Assist is a browser-only feature that uses the configured API with a built-in expert prompt engineering system prompt to auto-improve prompts.
+
+| User says | You do |
+|-----------|--------|
+| "How do I use AI Assist?" | Guide user: open browser, go to Edit tab, type optimization direction in the AI Assist input, click "AI 辅助修改" |
+| "What's the built-in prompt for AI Assist?" | The assistant uses an English expert prompt engineer prompt covering: role clarity, structure, tone, constraints, variables, output format |
+| "AI Assist isn't working" | Check: 1) API configured (gear icon), 2) direction input not empty, 3) browser console for errors |
+
+## 10. Test History
+
+| User says | You do |
+|-----------|--------|
+| "View test history" | Guide user to the "Test" tab — test history is at the bottom of the output panel, click to expand |
+| "How do I export a test result?" | In the test result display, click "HTML" or "MD" button to download |
+| "Clear test history" | Click "清空历史" (Clear History) at the bottom of the history list |
+| "I ran tests before but history is empty" | Test history is stored per-device in localStorage. Clearing browser data resets it. |
+
+## 11. Editor Features
+
+| User says | You do |
+|-----------|--------|
+| "Copy prompt content" | In browser Edit tab, click the 📋 button next to the version title |
+| "Save as new version" | Click "保存版本" button next to the version title input |
 
 ---
 
 # Data Persistence
 
-- **Browser mode**: data lives in `localStorage` under keys `promptvault_prompts` and `promptvault_api_config`
+- **Browser mode**: data lives in `localStorage` under keys `promptvault_prompts`, `promptvault_api_config`, and `promptvault_test_history`
 - **Agent mode**: data lives in conversation context. The agent tracks all prompts during the session.
 - **Transfer**: Export from agent mode as JSON → import into browser mode via ↑ Import button
 - **Loss risk**: Clearing browser data or losing conversation history will lose data. Export before clearing.

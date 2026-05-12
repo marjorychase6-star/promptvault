@@ -4,7 +4,7 @@
 
 ---
 
-# PromptVault
+# PromptVault v1.1
 
 **Prompt 版本管理工具 / Prompt Version Management Tool**
 
@@ -12,6 +12,7 @@
 
 Lightweight, offline-capable, dual-mode operation (Browser UI + AI Agent conversation).
 
+![Version](https://img.shields.io/badge/version-1.1-brightgreen)
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-deployed-success)
 ![PWA](https://img.shields.io/badge/PWA-ready-orange)
 ![i18n](https://img.shields.io/badge/i18n-zh%2Fen-blue)
@@ -20,7 +21,17 @@ Lightweight, offline-capable, dual-mode operation (Browser UI + AI Agent convers
 
 ## 🇨🇳 中文
 
-### 功能
+### v1.1 新增功能
+
+| 功能 | 说明 |
+|------|------|
+| 🤖 AI 辅助修改 | 调用已配置 API，由 LLM 根据优化方向自动改进 prompt 内容 |
+| 📜 测试历史 | 历史测试结果持久化保存，可折叠查看、重新浏览、导出 HTML/MD |
+| 📋 一键复制 | 编辑区一键复制当前 prompt 内容到剪贴板 |
+| 📤 测试结果导出 | 测试结果支持导出为 HTML / Markdown 文件 |
+| 🔄 版本选择测试 | 运行测试时可选择任意历史版本作为 system prompt |
+
+### 完整功能
 
 | 功能 | 说明 |
 |------|------|
@@ -28,6 +39,8 @@ Lightweight, offline-capable, dual-mode operation (Browser UI + AI Agent convers
 | 🔄 版本控制 | 多版本管理，自动递增版本号，预览历史版本 |
 | 📊 版本对比 | 行级 diff，高亮显示新增/删除内容 |
 | 🧪 实时测试 | 选择版本 + 输入测试问题，调用真实 API 验证 prompt 效果 |
+| 🤖 AI 辅助修改 | 输入优化方向，LLM 自动改进 prompt（使用内置专家提示词） |
+| 📜 测试历史 | 测试结果持久化，支持折叠查看与导出 |
 | ⚙️ API 配置 | OpenAI 兼容格式（支持 DeepSeek、通义千问、MiniMax 等） |
 | ↔️ 中英文切换 | 一键切换界面语言 |
 | 🌗 深色/浅色主题 | 双主题切换 |
@@ -51,7 +64,17 @@ Lightweight, offline-capable, dual-mode operation (Browser UI + AI Agent convers
 
 ## 🇬🇧 English
 
-### Features
+### What's New in v1.1
+
+| Feature | Description |
+|---------|-------------|
+| 🤖 AI Assist | Use configured API to auto-improve prompts via LLM with built-in expert prompt engineering prompt |
+| 📜 Test History | Persistent test result history, collapsible review, re-view and export HTML/MD |
+| 📋 Copy Button | One-click copy current prompt content to clipboard from the editor |
+| 📤 Export Results | Test results exportable as HTML / Markdown files |
+| 🔄 Version Select for Test | Choose any historical version as system prompt when running tests |
+
+### Full Features
 
 | Feature | Description |
 |---------|-------------|
@@ -59,6 +82,8 @@ Lightweight, offline-capable, dual-mode operation (Browser UI + AI Agent convers
 | 🔄 Version Control | Multi-version management, auto-increment, preview history |
 | 📊 Diff Comparison | Line-level diff with added/removed highlighting |
 | 🧪 Real-time Testing | Select version + enter test question, call real API |
+| 🤖 AI Assist | Enter optimization direction, LLM auto-improves prompt (built-in expert prompt) |
+| 📜 Test History | Persistent results with collapsible review and export |
 | ⚙️ API Config | OpenAI compatible (DeepSeek, Qwen, MiniMax, etc.) |
 | ↔️ Language Switch | One-click Chinese/English toggle |
 | 🌗 Dark/Light Theme | Dual theme support |
@@ -77,6 +102,19 @@ Lightweight, offline-capable, dual-mode operation (Browser UI + AI Agent convers
 - PWA (Service Worker + Manifest)
 - localStorage persistence
 - i18n Chinese/English
+
+### Change Log
+
+**v1.1** (2026-05-12)
+- AI Assist: LLM-powered prompt optimization with built-in expert prompt engineering prompt
+- Test History: persistent history with collapsible review, click-to-view, HTML/MD export
+- Copy button, result export (HTML/MD), version select for testing
+- UI refinements: button layout, editor header restructuring
+
+**v1.0** (2026-05-10)
+- Initial release: prompt library, version control, diff comparison, mock testing
+- API configuration, PWA support, i18n zh/en, dark/light themes
+- JSON import/export, Markdown export
 
 ---
 

@@ -1,7 +1,7 @@
 {
-  "name": "PromptVault — Prompt 版本管理工具",
+  "name": "PromptVault v1.1 — Prompt 版本管理工具",
   "short_name": "PromptVault",
-  "description": "管理、版本控制、对比、测试 Prompt 的轻量工具",
+  "description": "管理、版本控制、对比、测试 Prompt 的轻量工具 — AI 辅助修改 + 测试历史",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0f0f11",

@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#e8943a">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="PromptVault">
+<meta name="apple-mobile-web-app-title" content="PromptVault v1.1">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="apple-touch-icon" href="icons/icon.svg">
-<title>PromptVault · Prompt 版本管理工具</title>
+<title>PromptVault v1.1 · Prompt 版本管理工具</title>
 <style>
   :root {
     --bg: #0f0f11;
@@ -698,6 +698,65 @@
     color: var(--accent);
   }
 
+  /* ── Test History ── */
+  .test-history {
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .test-history__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-dim);
+    user-select: none;
+    transition: color 0.12s;
+  }
+  .test-history__header:hover { color: var(--text); }
+  .test-history__toggle { font-size: 10px; transition: transform 0.15s; }
+  .test-history__toggle--open { transform: rotate(90deg); }
+  .test-history__count { font-size: 11px; color: var(--text-dimmer); }
+  .test-history__list {
+    max-height: 0;
+    overflow-y: auto;
+    transition: max-height 0.2s ease;
+  }
+  .test-history__list--open { max-height: 300px; }
+  .test-history__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: background 0.1s;
+    border-left: 2px solid transparent;
+  }
+  .test-history__item:hover { background: var(--surface-hover); color: var(--text); }
+  .test-history__item--error { border-left-color: var(--red); }
+  .test-history__item--ok { border-left-color: var(--green); }
+  .test-history__item-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-dimmer); flex-shrink: 0; }
+  .test-history__item-meta { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .test-history__item-input { color: var(--text-dimmer); font-size: 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .test-history__clear {
+    display: none;
+    width: 100%;
+    padding: 6px;
+    font-size: 11px;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text-dimmer);
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .test-history__clear:hover { color: var(--red); }
+
   /* ── Loading ── */
   .loading-spinner {
     display: flex;
@@ -1053,6 +1112,16 @@
               </div>
             </div>
           </div>
+          <!-- Test History -->
+          <div class="test-history" id="testHistory">
+            <div class="test-history__header" onclick="toggleTestHistory()">
+              <span class="test-history__toggle" id="historyToggle">&#9654;</span>
+              <span data-i18n="historyTitle">测试历史</span>
+              <span class="test-history__count" id="historyCount">(0)</span>
+            </div>
+            <div class="test-history__list" id="historyList"></div>
+            <button class="test-history__clear" onclick="clearTestHistory()" data-i18n="historyClear" style="display:none">清空历史</button>
+          </div>
         </div>
       </div>
 
@@ -1163,6 +1232,8 @@ let currentPromptId = 1;
 let currentView = 'editor';
 let selectedVersionForDiff = null;
 let previewVersion = null;
+let testHistory = [];
+let historyCollapsed = true;
 let currentLang = localStorage.getItem('promptvault_lang') || 'zh';
 
 // ═══ i18n ═══
@@ -1259,6 +1330,11 @@ const i18n = {
     aiAssistPrompt: '你是一个修改提示词的专家。你的任务是帮助用户根据其具体需求改进他们的提示词。\n\n## 原则\n- 保留原始 prompt 的核心意图和功能\n- 优化结构、清晰度、语气一致性和具体性\n- 确保角色设定明确、约束条件清晰\n- 补全缺失的关键要素（输出格式、边界情况、示例、变量等）\n- 优先满足用户提出的具体优化方向\n- 适当使用 {{variable}} 语法标记模板变量\n\n## 输出格式\n只输出优化后的 prompt 内容，不要解释、不要分析、不要额外说明。',
     aiNoAPI: 'AI 辅助修改需要先配置 API（点击工具栏齿轮按钮设置）',
     copyTitle: '复制当前 prompt 内容',
+    historyTitle: '测试历史',
+    historyEmpty: '暂无测试记录',
+    historyClear: '清空历史',
+    historyClearConfirm: '确定清空所有测试历史？',
+    historyViewing: '正在查看历史记录，运行新测试将返回实时结果。',
   },
   en: {
     searchPlaceholder: 'Search prompts...',
@@ -1351,6 +1427,11 @@ const i18n = {
     aiAssistPrompt: 'You are an expert prompt engineer. Your task is to help users improve their prompts based on their specific requirements.\n\n## Guidelines\n- Preserve the core intent and functionality of the original prompt\n- Improve structure, clarity, tone consistency, and specificity\n- Ensure role definitions are clear and constraints are explicit\n- Fill in missing elements like output format, edge cases, examples, and variables\n- Prioritize the user\'s stated improvement direction\n- Use {{variable}} syntax for template variables where appropriate\n\n## Output Format\nOutput ONLY the improved prompt content with no explanations, analysis, or additional notes.',
     aiNoAPI: 'Configure API first (click the gear icon in toolbar) to use AI Assist',
     copyTitle: 'Copy current prompt content',
+    historyTitle: 'Test History',
+    historyEmpty: 'No test history yet',
+    historyClear: 'Clear History',
+    historyClearConfirm: 'Clear all test history?',
+    historyViewing: 'Viewing a history record. Run a new test for live results.',
   }
 };
 
@@ -1662,6 +1743,7 @@ function renderAll() {
   renderVersions();
   renderTestVersionSelect();
   updateModelLabel();
+  renderTestHistory();
 }
 
 function renderPromptList(filter) {
@@ -1786,6 +1868,16 @@ function renderMockOutput(version) {
   const container = document.getElementById('testResults');
   const userInput = document.getElementById('testUserInput').value.trim() || '(' + t('errorNoInput') + ')';
   const metaLabel = currentLang === 'zh' ? '模拟回复' : t('mockMeta');
+
+  addTestHistory({
+    versionV: version.v,
+    versionLabel: version.label,
+    model: apiConfig.model || 'GPT-4o',
+    userInput: userInput,
+    response: t('mockOutput') + '\n' + t('mockNoConfig'),
+    isError: false
+  });
+
   container.innerHTML = `
     <div class="output-msg" style="animation:fadeIn 0.3s ease">
       <div class="output-msg__meta">v${version.v} · ${escapeHtml(version.label)} · ${apiConfig.model || 'GPT-4o'} · ${new Date().toLocaleString('zh-CN')} · ${metaLabel}</div>
@@ -1812,6 +1904,16 @@ function renderResult(version, responseText, isError) {
   const msgClass = isError ? 'output-msg output-msg--error' : 'output-msg';
   const suffix = isError ? ' · ' + t('errorMeta') : '';
   const metaText = `v${version.v} · ${escapeHtml(version.label)} · ${apiConfig.model || 'GPT-4o'} · ${new Date().toLocaleString('zh-CN')}${suffix}`;
+
+  // Save to history
+  addTestHistory({
+    versionV: version.v,
+    versionLabel: version.label,
+    model: apiConfig.model || 'GPT-4o',
+    userInput: document.getElementById('testUserInput').value,
+    response: responseText,
+    isError
+  });
 
   const resultHtml = `
     <div class="${msgClass}" style="animation:fadeIn 0.3s ease">
@@ -1862,6 +1964,115 @@ function downloadFile(content, mime, filename) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ═══ Test History ═══
+
+function loadTestHistory() {
+  try {
+    const data = localStorage.getItem('promptvault_test_history');
+    if (data) testHistory = JSON.parse(data);
+  } catch(e) { testHistory = []; }
+}
+
+function saveTestHistory() {
+  try {
+    localStorage.setItem('promptvault_test_history', JSON.stringify(testHistory.slice(0, 100)));
+  } catch(e) {}
+}
+
+function addTestHistory(entry) {
+  testHistory.unshift({
+    id: Date.now(),
+    date: new Date().toLocaleString('zh-CN'),
+    versionV: entry.versionV,
+    versionLabel: entry.versionLabel,
+    model: entry.model,
+    userInput: entry.userInput,
+    response: entry.response,
+    isError: entry.isError || false
+  });
+  if (testHistory.length > 100) testHistory.length = 100;
+  saveTestHistory();
+  renderTestHistory();
+}
+
+function toggleTestHistory() {
+  historyCollapsed = !historyCollapsed;
+  const list = document.getElementById('historyList');
+  const toggle = document.getElementById('historyToggle');
+  list.classList.toggle('test-history__list--open', !historyCollapsed);
+  toggle.classList.toggle('test-history__toggle--open', !historyCollapsed);
+}
+
+function showHistoryItem(id) {
+  const entry = testHistory.find(e => e.id === id);
+  if (!entry) return;
+  const container = document.getElementById('testResults');
+  const version = { v: entry.versionV, label: entry.versionLabel };
+  const msgClass = entry.isError ? 'output-msg output-msg--error' : 'output-msg';
+  const metaText = `v${entry.versionV} · ${escapeHtml(entry.versionLabel)} · ${entry.model} · ${entry.date}${entry.isError ? ' · Error' : ''}`;
+  container.innerHTML = `
+    <div class="${msgClass}" style="animation:fadeIn 0.3s ease">
+      <div class="output-msg__meta">${metaText}</div>
+      <div class="output-msg__input"><strong>Q:</strong> ${escapeHtml(entry.userInput)}</div>
+      <div style="font-size:13px;line-height:1.8;color:${entry.isError ? 'var(--red)' : 'var(--text)'};white-space:pre-wrap;margin-top:8px;">${escapeHtml(entry.response)}</div>
+      ${!entry.isError ? `<div class="output-msg__export">
+        <button class="export-result-btn" onclick="exportHistoryHTML(${entry.id})">HTML</button>
+        <button class="export-result-btn" onclick="exportHistoryMD(${entry.id})">MD</button>
+      </div>` : ''}
+    </div>
+    <div class="output-msg output-msg--info" style="animation:fadeIn 0.3s 0.1s ease both;">
+      <div class="output-msg__meta">${t('outputHint')}</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text-dim);">
+        ${t('historyViewing')}
+      </div>
+    </div>
+  `;
+}
+
+function exportHistoryHTML(id) {
+  const entry = testHistory.find(e => e.id === id);
+  if (!entry) return;
+  const meta = 'v' + entry.versionV + ' · ' + entry.versionLabel;
+  const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${escapeHtml(meta)} · Test Result</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.7;color:#1a1a1e;}h1{font-size:18px;font-weight:600;}hr{border:none;border-top:1px solid #ddd;}pre{background:#f5f5f5;padding:16px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.6;}.meta{color:#888;font-size:12px;}</style></head><body><h1>${escapeHtml(meta)}</h1><div class="meta">${entry.date}</div><hr><pre>${escapeHtml(entry.response)}</pre></body></html>`;
+  downloadFile(html, 'text/html', 'test_' + entry.id + '.html');
+}
+
+function exportHistoryMD(id) {
+  const entry = testHistory.find(e => e.id === id);
+  if (!entry) return;
+  const meta = 'v' + entry.versionV + ' · ' + entry.versionLabel;
+  const md = `# ${meta}\n\n**Q:** ${entry.userInput}\n\n> Generated: ${entry.date}\n\n---\n\n${entry.response}\n`;
+  downloadFile(md, 'text/markdown', 'test_' + entry.id + '.md');
+}
+
+function clearTestHistory() {
+  if (testHistory.length === 0) return;
+  if (!confirm(t('historyClearConfirm'))) return;
+  testHistory = [];
+  saveTestHistory();
+  renderTestHistory();
+  document.querySelector('.test-history__clear').style.display = 'none';
+}
+
+function renderTestHistory() {
+  const list = document.getElementById('historyList');
+  const count = document.getElementById('historyCount');
+  const clearBtn = document.querySelector('.test-history__clear');
+  count.textContent = '(' + testHistory.length + ')';
+  clearBtn.style.display = testHistory.length > 0 ? 'block' : 'none';
+  if (testHistory.length === 0) {
+    list.innerHTML = '<div style="padding:6px 16px;font-size:11px;color:var(--text-dimmer)">' + t('historyEmpty') + '</div>';
+    return;
+  }
+  list.innerHTML = testHistory.map(e => `
+    <div class="test-history__item ${e.isError ? 'test-history__item--error' : 'test-history__item--ok'}" onclick="showHistoryItem(${e.id})">
+      <span class="test-history__item-time">${e.date.split(' ')[1] || e.date}</span>
+      <span class="test-history__item-meta">v${e.versionV} · ${escapeHtml(e.versionLabel)} · ${e.model}</span>
+      <span class="test-history__item-input">${escapeHtml(e.userInput.substring(0, 30))}</span>
+    </div>
+  `).join('');
 }
 
 function renderLoading() {
@@ -2323,6 +2534,7 @@ document.addEventListener('keydown', function(e) {
 
 // ═══ Init ═══
 loadApiConfig();
+loadTestHistory();
 initData();
 translateUI();
 // Ensure currentPromptId exists
