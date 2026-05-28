@@ -375,6 +375,23 @@
   }
   .ai-assist-input:focus { border-color: var(--accent); }
   .ai-assist-input::placeholder { color: var(--text-dimmer); }
+  .ai-template-select {
+    height: 34px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 8px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: border-color 0.15s;
+    max-width: 130px;
+    flex-shrink: 0;
+    appearance: auto;
+  }
+  .ai-template-select:focus { border-color: var(--accent); }
   .ai-assist-result {
     margin-top: 10px;
     border: 1px solid var(--border-light);
@@ -1064,6 +1081,16 @@
         <!-- AI Assist -->
         <div class="editor-ai-assist">
           <div class="ai-assist-bar">
+            <select class="ai-template-select" id="aiTemplate" title="选择优化模板" data-i18n-title="aiTemplateTitle">
+              <option value="general" data-i18n="aiTplGeneral">通用优化</option>
+              <option value="concise" data-i18n="aiTplConcise">简洁化</option>
+              <option value="examples" data-i18n="aiTplExamples">增加示例</option>
+              <option value="formal" data-i18n="aiTplFormal">正式语气</option>
+              <option value="constraints" data-i18n="aiTplConstraints">增加约束</option>
+              <option value="structured" data-i18n="aiTplStructured">结构化输出</option>
+              <option value="role" data-i18n="aiTplRole">角色强化</option>
+              <option value="variables" data-i18n="aiTplVariables">补充变量</option>
+            </select>
             <input class="ai-assist-input" id="aiDirection" placeholder="优化方向，如：让它更简洁、增加示例、改为正式语气..." data-i18n-placeholder="aiDirectionPlaceholder">
             <button class="btn btn--primary" onclick="handleAiAssist()" data-i18n="aiAssistBtn">AI 辅助修改</button>
           </div>
@@ -1323,11 +1350,20 @@ const i18n = {
     noPromptSelected: '选择 prompt',
     prevPromptEmpty: '选择左侧 prompt 开始编辑',
     importLabel: '从 .md 导入',
-    aiDirectionPlaceholder: '优化方向，如：让它更简洁、增加示例、改为正式语气...',
+    aiDirectionPlaceholder: '优化方向（可选）：补充具体的改进需求...',
     aiAssistBtn: 'AI 辅助修改',
     aiApplyBtn: '替换内容',
     aiSaveBtn: '另存为新版本',
-    aiAssistPrompt: '你是一个修改提示词的专家。你的任务是帮助用户根据其具体需求改进他们的提示词。\n\n## 原则\n- 保留原始 prompt 的核心意图和功能\n- 优化结构、清晰度、语气一致性和具体性\n- 确保角色设定明确、约束条件清晰\n- 补全缺失的关键要素（输出格式、边界情况、示例、变量等）\n- 优先满足用户提出的具体优化方向\n- 适当使用 {{variable}} 语法标记模板变量\n\n## 输出格式\n只输出优化后的 prompt 内容，不要解释、不要分析、不要额外说明。',
+    aiTemplateTitle: '选择优化模板',
+    aiTplGeneral: '通用优化',
+    aiTplConcise: '简洁化',
+    aiTplExamples: '增加示例',
+    aiTplFormal: '正式语气',
+    aiTplConstraints: '增加约束',
+    aiTplStructured: '结构化输出',
+    aiTplRole: '角色强化',
+    aiTplVariables: '补充变量',
+    aiAssistPrompt: '你是一位资深提示词工程师。你的任务是帮助用户改进提示词。\n\n## 核心原则\n- 保留原始提示词的核心意图和功能，不做无关修改\n- 优化结构、清晰度、语气一致性和具体性\n- 确保角色设定明确、约束条件清晰、输出格式指定\n- 补全缺失的关键要素：输出格式、边界情况、示例、变量等\n- 适当使用 {{variable}} 语法标记模板变量\n- 优先满足用户提出的具体优化方向\n\n## 优化检查清单\n1. 角色定义是否清晰？\n2. 任务描述是否无歧义？\n3. 约束和规则是否完整？\n4. 输出格式是否明确？\n5. 边界情况是否覆盖？\n6. 语气是否一致合适？\n7. 是否使用了变量模板？\n8. 是否需要示例辅助理解？\n\n## 输出格式\n只输出优化后的完整提示词内容，不要任何解释、分析或标记。',
     aiNoAPI: 'AI 辅助修改需要先配置 API（点击工具栏齿轮按钮设置）',
     copyTitle: '复制当前 prompt 内容',
     historyTitle: '测试历史',
@@ -1420,11 +1456,20 @@ const i18n = {
     noPromptSelected: 'Select a prompt',
     prevPromptEmpty: 'Select a prompt from the sidebar to start editing',
     importLabel: 'Imported from .md',
-    aiDirectionPlaceholder: 'Direction: make it more concise, add examples, formal tone...',
+    aiDirectionPlaceholder: 'Direction (optional): enter specific improvement needs...',
     aiAssistBtn: 'AI Assist',
     aiApplyBtn: 'Replace Content',
     aiSaveBtn: 'Save as New Version',
-    aiAssistPrompt: 'You are an expert prompt engineer. Your task is to help users improve their prompts based on their specific requirements.\n\n## Guidelines\n- Preserve the core intent and functionality of the original prompt\n- Improve structure, clarity, tone consistency, and specificity\n- Ensure role definitions are clear and constraints are explicit\n- Fill in missing elements like output format, edge cases, examples, and variables\n- Prioritize the user\'s stated improvement direction\n- Use {{variable}} syntax for template variables where appropriate\n\n## Output Format\nOutput ONLY the improved prompt content with no explanations, analysis, or additional notes.',
+    aiTemplateTitle: 'Select optimization template',
+    aiTplGeneral: 'General',
+    aiTplConcise: 'Concise',
+    aiTplExamples: 'Add Examples',
+    aiTplFormal: 'Formal Tone',
+    aiTplConstraints: 'Add Constraints',
+    aiTplStructured: 'Structured Output',
+    aiTplRole: 'Role Strengthen',
+    aiTplVariables: 'Add Variables',
+    aiAssistPrompt: 'You are a senior prompt engineer. Your task is to help users improve their prompts.\n\n## Core Principles\n- Preserve the original prompt\'s core intent and functionality\n- Improve structure, clarity, tone consistency, and specificity\n- Ensure role definition is clear, constraints are explicit, and output format is specified\n- Fill in missing elements: output format, edge cases, examples, variables\n- Use {{variable}} syntax for template variables where appropriate\n- Prioritize the user\'s stated improvement direction\n\n## Optimization Checklist\n1. Is the role clearly defined?\n2. Is the task description unambiguous?\n3. Are constraints and rules complete?\n4. Is the output format specified?\n5. Are edge cases covered?\n6. Is the tone consistent and appropriate?\n7. Are variables templated?\n8. Are examples needed for clarity?\n\n## Output Format\nOutput ONLY the complete optimized prompt content. No explanations, annotations, or markers.',
     aiNoAPI: 'Configure API first (click the gear icon in toolbar) to use AI Assist',
     copyTitle: 'Copy current prompt content',
     historyTitle: 'Test History',
@@ -2251,7 +2296,49 @@ function copyPromptContent() {
   });
 }
 
-const AI_ASSIST_PROMPT = t('aiAssistPrompt');
+// Optimization template instructions (inspired by prompt-optimizer)
+const AI_TEMPLATE_INSTRUCTIONS = {
+  general: {
+    zh: '请进行全面的平衡优化：检查角色定义、任务描述、约束规则、输出格式、边界情况和语气一致性，补全所有缺失的关键要素。',
+    en: 'Perform comprehensive, balanced optimization: check role definition, task description, constraints, output format, edge cases, and tone consistency. Fill in all missing key elements.'
+  },
+  concise: {
+    zh: '## 本次优化重点：简洁化\n- 删除冗余和重复内容\n- 合并相似的规则和指令\n- 使用更精炼的表达方式\n- 保持信息密度高但不过度压缩\n- 确保优化后的提示词仍然清晰完整',
+    en: '## Focus: Make It Concise\n- Remove redundant and repetitive content\n- Merge similar rules and instructions\n- Use more concise expressions without losing meaning\n- Maintain high information density without over-compression\n- Ensure the optimized prompt remains clear and complete'
+  },
+  examples: {
+    zh: '## 本次优化重点：增加示例\n- 为关键规则和约束添加具体示例\n- 使用 Few-shot 示例帮助模型理解预期行为\n- 示例应覆盖正常情况和边界情况\n- 示例格式应与输出格式要求一致\n- 确保示例简洁有力，不过度冗长',
+    en: '## Focus: Add Examples\n- Add concrete examples for key rules and constraints\n- Use few-shot examples to help the model understand expected behavior\n- Cover both normal and edge cases in examples\n- Ensure example format matches output format requirements\n- Keep examples concise and impactful'
+  },
+  formal: {
+    zh: '## 本次优化重点：正式/专业语气\n- 使用正式、专业的语言风格\n- 避免口语化表达和随意措辞\n- 确保角色设定体现专业性和权威感\n- 使用行业标准术语和规范表达\n- 保持礼貌专业但不啰嗦',
+    en: '## Focus: Formal/Professional Tone\n- Use formal, professional language style\n- Avoid colloquial expressions and casual wording\n- Ensure role definition reflects professionalism and authority\n- Use industry-standard terminology\n- Stay polite and professional but concise'
+  },
+  constraints: {
+    zh: '## 本次优化重点：增加约束与边界\n- 明确行为边界：什么可以做、什么不能做\n- 添加安全限制和道德约束\n- 定义异常情况和信息不足时的处理方式\n- 添加输入验证规则\n- 明确当请求超出范围时的回复策略',
+    en: '## Focus: Add Constraints & Boundaries\n- Define behavioral boundaries: what can and cannot be done\n- Add safety limits and ethical constraints\n- Define handling for exceptions and insufficient information\n- Add input validation rules\n- Specify response strategy when requests are out of scope'
+  },
+  structured: {
+    zh: '## 本次优化重点：结构化输出\n- 指定清晰的输出格式（JSON、Markdown、表格等）\n- 定义输出内容的层级结构和字段\n- 确保输出格式可解析和可验证\n- 添加格式示例说明\n- 平衡输出的可读性与机器可解析性',
+    en: '## Focus: Structured Output\n- Specify clear output format (JSON, Markdown, table, etc.)\n- Define output structure hierarchy and fields\n- Ensure output format is parseable and verifiable\n- Add format examples for clarity\n- Balance human readability with machine parseability'
+  },
+  role: {
+    zh: '## 本次优化重点：角色强化\n- 细化角色背景、专业领域和经验\n- 明确角色的知识范围和能力限制\n- 定义角色的沟通风格、语气和态度\n- 添加角色的行为准则和核心价值观\n- 确保角色设定与实际任务场景高度匹配',
+    en: '## Focus: Role Strengthening\n- Elaborate role background, expertise, and experience\n- Define the role\'s knowledge scope and capability limits\n- Define communication style, tone, and attitude\n- Add behavioral guidelines and core values\n- Ensure role definition tightly matches actual task scenarios'
+  },
+  variables: {
+    zh: '## 本次优化重点：补充模板变量\n- 识别提示词中的可变内容，抽象为 {{变量名}} 格式\n- 为每个变量添加内联注释说明其用途\n- 保持变量命名的一致性和可读性\n- 确保模板化后提示词仍然易于理解和使用\n- 对复杂变量可提供可选值或示例',
+    en: '## Focus: Add Template Variables\n- Identify variable content and abstract as {{variable_name}} format\n- Add inline comments for each variable explaining its purpose\n- Maintain consistent and readable variable naming\n- Ensure the templated prompt remains easy to understand and use\n- Provide optional values or examples for complex variables'
+  }
+};
+
+function getAiAssistSystemPrompt(templateId) {
+  const base = t('aiAssistPrompt');
+  const tpl = AI_TEMPLATE_INSTRUCTIONS[templateId];
+  if (!tpl) return base;
+  const instruction = tpl[currentLang] || tpl.en || '';
+  return base + '\n\n' + instruction;
+}
 
 async function handleAiAssist() {
   const prompt = getCurrentPrompt();
@@ -2266,12 +2353,7 @@ async function handleAiAssist() {
   }
 
   const direction = document.getElementById('aiDirection').value.trim();
-  if (!direction) {
-    document.getElementById('aiDirection').focus();
-    document.getElementById('aiDirection').style.borderColor = 'var(--red)';
-    setTimeout(() => document.getElementById('aiDirection').style.borderColor = '', 2000);
-    return;
-  }
+  const templateId = document.getElementById('aiTemplate').value;
 
   const current = prompt.versions.find(v => v.status === 'current') || prompt.versions[prompt.versions.length - 1];
   const content = current.content;
@@ -2281,10 +2363,11 @@ async function handleAiAssist() {
   resultDiv.style.display = 'block';
   contentDiv.textContent = t('loading');
 
-  const userMessage = '## Original Prompt\n\n' + content + '\n\n## Improvement Request\n\n' + direction;
+  const userMessage = '## Original Prompt\n\n' + content + (direction ? '\n\n## Improvement Request\n\n' + direction : '');
 
   try {
-    const response = await callLLM(AI_ASSIST_PROMPT, userMessage, true);
+    const systemPrompt = getAiAssistSystemPrompt(templateId);
+    const response = await callLLM(systemPrompt, userMessage, true);
     contentDiv.textContent = response;
     contentDiv.dataset.aiResult = response;
   } catch(err) {
